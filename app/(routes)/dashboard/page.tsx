@@ -20,8 +20,19 @@ import { useUser,useClerk } from "@clerk/nextjs";
 import { AIDoctorAgents } from "./components/list";
 import { useRouter } from "next/navigation";
 
+// Add this interface
+interface Consultation {
+  id: string;
+  doctor: string;
+  specialty: string;
+  date: string;
+  time: string;
+  duration: string;
+  status: string;
+}
+
 const ConsultationHistory = () => {
-  const consultations = []; // Empty array to show no recent consultations
+  const consultations: Consultation[] = []; // Empty array with explicit type
 
   if (consultations.length === 0) {
     return (
