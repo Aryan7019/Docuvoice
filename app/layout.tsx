@@ -13,6 +13,9 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Docuvoice - Medical Voice Assistant",
   description: "AI-powered medical voice assistant for appointment booking and symptom triage",
+   icons: {
+      icon: "/logo.svg",
+   },
 };
 
 export default function RootLayout({
@@ -21,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider >
+    <ClerkProvider>
       <html lang="en">
         <body className={`${montserrat.variable} antialiased`}>
           <Provider>
