@@ -230,7 +230,7 @@ const Workspace = () => {
   );
 };
 
-export const Logo = () => {
+const Logo = () => {
   return (
     <a
       href="/"
