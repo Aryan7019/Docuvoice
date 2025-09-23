@@ -1,172 +1,186 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import {
-  IconArrowLeft,
-  IconBrandTabler,
-  IconSettings,
-  IconUserBolt,
   IconMicrophone,
-  IconCalendar,
-  IconClock,
   IconMessage,
-  IconVideo,
+  IconClock,
   IconCrown,
-  IconCoin
+  IconCoin,
+  IconDashboard,
+  IconUser,
+  IconCurrencyDollar,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { useUser,useClerk } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { AIDoctorAgents } from "./components/list";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import AddNewSessionDialog from "./components/AddNewSessionDialog";
+import ConsultationHistory, { Consultation } from "./components/HistoryList";
+import DoctorAgentsList from "./components/DoctorAgentsList";
 
-// Add this interface
-interface Consultation {
-  id: string;
-  doctor: string;
-  specialty: string;
-  date: string;
-  time: string;
-  duration: string;
-  status: string;
-}
-
-const ConsultationHistory = () => {
-  const consultations: Consultation[] = []; // Empty array with explicit type
-
-  if (consultations.length === 0) {
-    return (
-      <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="w-14 h-14 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900/30">
-            <IconCalendar className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </div>
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-          No Recent Consultations
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base mb-4">
-          You haven't had any consultations yet. Start your first conversation with one of our AI doctors!
-        </p>
-      </div>
-    );
-  }
-
+// Custom SidebarLink component with active state and open/closed awareness
+const CustomSidebarLink = ({
+  link,
+  isActive,
+  isOpen,
+  onClick,
+}: {
+  link: { label: string; href: string; icon: React.ReactNode };
+  isActive: boolean;
+  isOpen: boolean;
+  onClick: () => void;
+}) => {
   return (
-    <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
-      <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4 md:mb-6 flex items-center gap-2">
-        <IconCalendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
-        Consultation History
-      </h2>
-      <div className="space-y-4">
-        {consultations.map((consultation) => (
-          <div
-            key={consultation.id}
-            className="p-3 md:p-4 rounded-lg border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-750"
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className="relative"
+    >
+      <button
+  onClick={onClick}
+  className={cn(
+    "flex items-center font-medium transition-all duration-200 text-sm", // Removed w-full from here
+    "group hover:bg-blue-50 dark:hover:bg-blue-950/30",
+    "rounded-full",
+    isOpen
+      ? "w-full justify-start gap-3 px-3 py-2.5" // Added w-full here
+      : "justify-center p-2.5", // This now correctly forms a circle
+    isActive
+      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
+      : "text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400"
+  )}
+>
+        <div
+          className={cn(
+            "transition-colors duration-200 flex items-center justify-center",
+            isActive
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-neutral-500 dark:text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
+          )}
+        >
+          {link.icon}
+        </div>
+        
+        {isOpen && (
+          <motion.span 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+            className="truncate ml-1"
           >
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-white text-sm md:text-base">
-                  {consultation.doctor}
-                </h3>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                  {consultation.specialty}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400 gap-2 md:gap-0">
-              <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
-                <span className="flex items-center gap-1">
-                  <IconClock className="h-3 w-3 md:h-4 md:w-4" />
-                  {consultation.date} at {consultation.time}
-                </span>
-                <span>{consultation.duration}</span>
-              </div>
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full dark:bg-green-900/30 dark:text-green-400 self-start md:self-auto">
-                {consultation.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+            {link.label}
+          </motion.span>
+        )}
+        
+        {isActive && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className={cn(
+              "absolute bg-blue-500 rounded-full",
+              isOpen 
+                ? "right-3 top-1/2 h-2 w-2 -translate-y-1/2" // Circular indicator for open state
+                : "top-1/2 -right-1 h-2 w-2 -translate-y-1/2" // Circular indicator for closed state
+            )}
+          />
+        )}
+      </button>
+    </motion.div>
   );
 };
 
-const AIDoctorCard = ({ doctor }: { doctor: typeof AIDoctorAgents[0] }) => {
+// Special component for user profile link to handle image display properly
+const UserProfileLink = ({
+  user,
+  isActive,
+  isOpen,
+  onClick,
+}: {
+  user: any;
+  isActive: boolean;
+  isOpen: boolean;
+  onClick: () => void;
+}) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow dark:bg-neutral-900 dark:border-neutral-700 dark:hover:shadow-neutral-800 flex flex-col h-full overflow-hidden">
-      {/* Doctor Image */}
-      <div className="w-full h-40 sm:h-48 md:h-75 overflow-hidden">
-        <img
-          src={doctor.image}
-          alt={doctor.specialist}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      
-      {/* Content */}
-      <div className="flex flex-col flex-1 p-3 md:p-4">
-        <div className="flex justify-between items-start mb-2 md:mb-3">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm md:text-base lg:text-lg">
-            {doctor.specialist}
-          </h3>
-          {doctor.subscriptionRequired && (
-            <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
-              <IconCrown className="h-3 w-3" />
-            </span>
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className="relative"
+    >
+      <button
+  onClick={onClick}
+  className={cn(
+    "flex items-center font-medium transition-all duration-200 text-sm", // Removed w-full from here
+    "group hover:bg-blue-50 dark:hover:bg-blue-950/30",
+    "rounded-full",
+    isOpen
+      ? "w-full justify-start gap-3 px-3 py-2.5" // Added w-full here
+      : "justify-center p-2.5", // This now correctly forms a circle
+    isActive
+      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
+      : "text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400"
+  )}
+>
+        <div
+          className={cn(
+            "transition-colors duration-200 flex items-center justify-center",
+            isActive
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-neutral-500 dark:text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
+          )}
+        >
+          {user?.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt="User avatar"
+              className={cn(
+                "shrink-0 rounded-full object-cover",
+                "h-6 w-6 lg:h-7 lg:w-7"
+              )}
+            />
+          ) : (
+            <div className={cn(
+              "bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center",
+              "h-6 w-6 lg:h-7 lg:w-7"
+            )}>
+              <IconUser className={cn(
+                "text-gray-600 dark:text-gray-300",
+                isOpen ? "h-4 w-4 lg:h-5 lg:w-5" : "h-3 w-3 lg:h-4 lg:w-4"
+              )} />
+            </div>
           )}
         </div>
         
-        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3 md:mb-4 flex-1 line-clamp-3">
-          {doctor.description}
-        </p>
+        {isOpen && (
+          <motion.span 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+            className="truncate ml-1"
+          >
+            {user?.fullName || "Profile"}
+          </motion.span>
+        )}
         
-        {/* Button at bottom */}
-        <button className="w-full bg-blue-600 text-white py-2 md:py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 md:gap-2 font-medium mt-auto text-xs md:text-sm">
-          <IconMicrophone className="h-3 w-3 md:h-4 md:w-4" />
-          Start Consultation
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const AIDoctorsGrid = () => {
-  return (
-    <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
-      <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4 md:mb-6">
-        AI Doctor Specialists
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-        {AIDoctorAgents.map((doctor) => (
-          <AIDoctorCard key={doctor.id} doctor={doctor} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const StartConsultationButton = () => {
-  return (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 md:p-6 shadow-lg">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-full mb-3 md:mb-4">
-          <IconMicrophone className="h-6 w-6 md:h-8 md:w-8 text-white" />
-        </div>
-        <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-          Start Instant Consultation
-        </h2>
-        <p className="text-blue-100 text-sm md:text-base mb-4 md:mb-6">
-          Connect with a doctor in minutes. 24/7 availability.
-        </p>
-        <button className="bg-white text-blue-600 px-6 py-2 md:px-8 md:py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 mx-auto text-sm md:text-base">
-          <IconVideo className="h-4 w-4 md:h-5 md:w-5" />
-          Start Voice Consultation
-        </button>
-      </div>
-    </div>
+        {isActive && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className={cn(
+              "absolute bg-blue-500 rounded-full",
+              isOpen 
+                ? "right-3 top-1/2 h-2 w-2 -translate-y-1/2"
+                : "top-1/2 -right-1 h-2 w-2 -translate-y-1/2"
+            )}
+          />
+        )}
+      </button>
+    </motion.div>
   );
 };
 
@@ -174,19 +188,19 @@ const WelcomeBanner = () => {
   const { user } = useUser();
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 md:p-8 text-white">
+    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 lg:p-6 xl:p-8 text-white">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold mb-2">
-            Welcome back, {user?.firstName}! 👋
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-2 truncate">
+            Welcome back, {user?.firstName || 'User'}! 👋
           </h1>
-          <p className="text-blue-100 text-sm md:text-base">
+          <p className="text-blue-100 text-xs sm:text-sm lg:text-base truncate">
             How are you feeling today? Our AI doctors are ready to help.
           </p>
         </div>
-        <div className="hidden md:flex">
-          <div className="w-14 h-14 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center">
-            <IconMicrophone className="h-6 w-6 md:h-8 md:w-8" />
+        <div className="hidden sm:flex ml-4">
+          <div className="w-12 h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <IconMicrophone className="h-5 w-5 lg:h-6 lg:w-6 xl:h-7 xl:w-7" />
           </div>
         </div>
       </div>
@@ -196,26 +210,26 @@ const WelcomeBanner = () => {
 
 const QuickActions = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 xl:gap-6">
+      <div className="bg-white rounded-xl p-3 lg:p-4 xl:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-900/30">
-            <IconMessage className="h-5 w-5 md:h-6 md:w-6 text-blue-600 dark:text-blue-400" />
+            <IconMessage className="h-4 w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Consultations</p>
+            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Total Consultations</p>
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
+      <div className="bg-white rounded-xl p-3 lg:p-4 xl:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-green-100 rounded-lg dark:bg-green-900/30">
-            <IconClock className="h-5 w-5 md:h-6 md:w-6 text-green-600 dark:text-green-400" />
+            <IconClock className="h-4 w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0h 0m</p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Time</p>
+            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">0h 0m</p>
+            <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Total Time</p>
           </div>
         </div>
       </div>
@@ -224,119 +238,127 @@ const QuickActions = () => {
 };
 
 const Workspace = () => {
+  const consultations: Consultation[] = [];
+
   return (
-    <div className="flex flex-1 flex-col p-4 md:p-6 gap-4 md:gap-6 overflow-y-auto">
-      {/* Welcome Banner */}
-      <WelcomeBanner />
-
-      {/* Start Consultation Button */}
-      <StartConsultationButton />
-
-      {/* Quick Actions */}
-      <QuickActions />
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 gap-4 md:gap-6">
-        {/* Consultation History - Now full width */}
-        <ConsultationHistory />
-
-        {/* All AI Doctors */}
-        <AIDoctorsGrid />
+     <div className="flex-1 overflow-y-auto">
+      <div className="max-w-7xl w-full mx-auto p-3 lg:p-4 xl:p-6 flex flex-col gap-4 lg:gap-6 xl:gap-8">
+        <WelcomeBanner />
+        <AddNewSessionDialog />
+        <QuickActions />
+        <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:gap-8">
+          <ConsultationHistory consultations={consultations} />
+          <DoctorAgentsList doctors={AIDoctorAgents} />
+        </div>
       </div>
     </div>
   );
 };
 
-const Logo = () => {
+const Logo = ({ isOpen }: { isOpen: boolean }) => {
   return (
-    <a
-      href="/"
-      className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black dark:text-white"
-    >
+    <a href="/" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black dark:text-white">
       <img
         src="/logo.svg"
         alt="Logo"
-        className="h-7 w-7 md:h-8 md:w-8 rounded-lg"
+        className="h-6 w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 rounded-lg"
       />
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="font-medium whitespace-pre text-sm md:text-base"
-      >
-        Docuvoice
-      </motion.span>
+      {isOpen && (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="font-medium whitespace-pre text-sm lg:text-base"
+        >
+          Docuvoice
+        </motion.span>
+      )}
     </a>
   );
 };
 
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
-  const handleLogout = () => {
-    window.location.href = "/sign-out";
-  };
+  const pathname = usePathname();
+
   const links = [
-    {
-      label: "Dashboard",
-      href: "#",
-      icon: (
-        <IconBrandTabler className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-      ),
-    },
-    {
-      label: "Profile",
-      href: "#",
-      icon: (
-        <IconUserBolt className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-      ),
-    },
-    {
-      label: "Pricing",
-      href: "#",
-      icon: (
-        <IconCoin className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-      ),
-    },
+    { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="h-4 w-4 lg:h-5 lg:w-5 shrink-0" /> },
+    { label: "Profile", href: "/profile", icon: <IconUser className="h-4 w-4 lg:h-5 lg:w-5 shrink-0" /> },
+    { label: "Pricing", href: "/pricing", icon: <IconCurrencyDollar className="h-4 w-4 lg:h-5 lg:w-5 shrink-0" /> },
   ];
 
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile devices and auto-close sidebar
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setOpen(false);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const getActiveLink = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname?.startsWith(href);
+  };
+
+  const handleNavigation = (href: string) => {
+    router.push(href);
+    // Close sidebar on mobile after navigation
+    if (isMobile) {
+      setOpen(false);
+    }
+  };
 
   return (
-    <div className={cn(
-      "flex w-full flex-1 flex-col bg-gray-100 md:flex-row dark:bg-neutral-900",
-      "h-screen"
-    )}>
+    <div className={cn("flex w-full flex-1 flex-col bg-gray-100 md:flex-row dark:bg-neutral-900", "h-screen")}>
       <Sidebar open={open} setOpen={setOpen}>
-        <SidebarBody className="justify-between gap-10">
+        <SidebarBody className="justify-between gap-8 lg:gap-10">
           <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-            <Logo />
-            <div className="mt-6 md:mt-8 flex flex-col gap-2">
+            <Logo isOpen={open} />
+            <div className="mt-4 lg:mt-6 xl:mt-8 flex flex-col gap-1 lg:gap-2">
               {links.map((link, idx) => (
-                <SidebarLink key={idx} link={link} />
+                <CustomSidebarLink
+                  key={idx}
+                  link={link}
+                  isActive={getActiveLink(link.href)}
+                  isOpen={open}
+                  onClick={() => handleNavigation(link.href)}
+                />
               ))}
             </div>
           </div>
           <div>
-            {user ? (
-              <SidebarLink
-                link={{
-                  label: user.fullName || "User",
-                  href: "#",
-                  icon: (
-                    <img
-                      src={user.imageUrl}
-                      className="h-6 w-6 md:h-7 md:w-7 shrink-0 rounded-full"
-                      width={28}
-                      height={28}
-                      alt="User avatar"
-                    />
-                  ),
-                }}
+            {isLoaded && user ? (
+              <UserProfileLink
+                user={user}
+                isActive={getActiveLink("/profile")}
+                isOpen={open}
+                onClick={() => handleNavigation("/profile")}
               />
             ) : (
-              <div className="flex items-center gap-2 p-2">
-                <div className="h-6 w-6 md:h-7 md:w-7 shrink-0 rounded-full bg-gray-300 animate-pulse dark:bg-gray-600"></div>
-                <div className="h-4 w-20 bg-gray-300 rounded animate-pulse dark:bg-gray-600"></div>
+              <div className={cn(
+                "flex items-center transition-all duration-200 rounded-full",
+                open 
+                  ? "justify-start gap-3 px-3 py-2.5" 
+                  : "justify-center p-2.5"
+              )}>
+                <div className={cn(
+                  "rounded-full bg-gray-300 animate-pulse dark:bg-gray-600",
+                  open ? "h-6 w-6 lg:h-7 lg:w-7" : "h-5 w-5 lg:h-6 lg:w-6"
+                )} />
+                {open && (
+                  <div className="h-4 w-20 lg:w-24 bg-gray-300 rounded animate-pulse dark:bg-gray-600"></div>
+                )}
               </div>
             )}
           </div>
