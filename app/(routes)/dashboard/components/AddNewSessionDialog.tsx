@@ -10,24 +10,88 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog"
-import { IconMicrophone, IconVideo, IconPlus, IconX, IconCaretRightFilled } from "@tabler/icons-react"
+import { IconMicrophone, IconVideo, IconPlus, IconCaretRightFilled, IconCrown, } from "@tabler/icons-react"
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { DoctorAgent } from './DoctorAgentsList'
+import { Loader2 } from 'lucide-react'
+
+const CompactDoctorCard = ({ doctor, onClick }: { doctor: DoctorAgent; onClick: () => void }) => {
+  return (
+    <div 
+      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 dark:bg-neutral-800 dark:border-neutral-600 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 cursor-pointer flex flex-col h-full group"
+      onClick={onClick}>
+      <div className="flex flex-col items-center pt-3 px-3">
+        {/* Circular Doctor Image */}
+        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-blue-400 transition-colors duration-200 mb-2">
+          <img
+            src={doctor.image}
+            alt={doctor.specialist}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        
+        <div className="flex justify-center items-center gap-1 mb-1 w-full">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-xs text-center group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors duration-200">
+            {doctor.specialist}
+          </h3>
+          {doctor.subscriptionRequired && (
+            <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+              <IconCrown className="h-2.5 w-2.5" />
+            </span>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex flex-col flex-1 p-3 pt-0">
+        {/* Full Description */}
+        <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-2 flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors duration-200 leading-relaxed">
+          {doctor.description}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function AddNewSessionDialog() {
-  const [note,setNote]=useState<string>();
-  const [loading,setLoading]=useState<boolean>(false);
-  const [suggestedDoctors,setSuggestedDoctors]=useState<(any)>();
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [suggestedDoctors, setSuggestedDoctors] = useState<DoctorAgent[]>();
 
-  const OnClickNext=async()=>{
+  const onClickNext = async () => {
     setLoading(true);
-    const result = await axios.post('/api/suggest-doctors', { notes: note });
-    console.log(result.data);
-    setLoading(false);
+    try {
+      const result = await axios.post('/api/suggest-doctors', { notes: note });
+      console.log("Suggested Doctors:", result.data);
+      setSuggestedDoctors(result.data);
+    } catch (error) {
+      console.error("Failed to fetch suggested doctors:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      // Reset state when dialog is closed, ensuring a fresh start next time
+      setNote('');
+      setLoading(false);
+      setSuggestedDoctors(undefined);
+    }
+  };
+
+  const handleStartConsultation = (doctor: DoctorAgent) => {
+    // Handle starting consultation with the selected doctor
+    console.log("Starting consultation with:", doctor);
+    // Add your consultation page navigation logic here
+    // For example: router.push(`/consultation/${doctor.id}`);
+    setOpen(false); // Close the dialog
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 md:p-6 shadow-lg cursor-pointer w-full hover:shadow-xl transition-shadow">
           <div className="text-center">
@@ -47,58 +111,96 @@ function AddNewSessionDialog() {
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl">
-        <DialogHeader className="space-y-4">
-          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IconPlus className="h-5 w-5 text-blue-600" />
             Start New Consultation
           </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
-            Add your symptoms or any details to help the AI doctor understand your condition better.
-          </DialogDescription>
+
+          {!suggestedDoctors ? (
+            <DialogDescription className="text-sm">
+              Add your symptoms or any details to help the AI doctor understand your condition better.
+            </DialogDescription>
+          ) : (
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <h4 className="font-medium text-gray-800 dark:text-gray-200">
+                Based on your notes, we suggest:
+              </h4>
+            </div>
+          )}
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label htmlFor="symptoms" className="text-sm font-medium text-gray-700 dark:text-gray-300 ">
-              Symptoms & Details
-            </label>
-            <Textarea 
-              id="symptoms"
-              placeholder="Describe your symptoms, duration, severity, and any other relevant information..."
-              className="min-h-[120px] mt-2 resize-none border-gray-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white"
-              onChange={(e) => setNote(e.target.value)}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              The more details you provide, the better the AI doctor can assist you.
-            </p>
-          </div>
-          
-          <div className="flex gap-3 pt-2">
-            <DialogClose asChild>
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="flex-1 border-gray-300 dark:border-neutral-600 dark:text-white"
+
+        {!suggestedDoctors ? (
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label htmlFor="symptoms" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Symptoms & Details
+              </label>
+              <Textarea
+                id="symptoms"
+                placeholder="Describe your symptoms, duration, severity..."
+                className="min-h-[100px] text-sm resize-none border-gray-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white"
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                The more details you provide, the better the AI can assist you.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline" className="flex-1 text-sm py-2">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                type="button"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm py-2"
+                disabled={!note || note.trim().length === 0 || loading}
+                onClick={onClickNext}
               >
-                <IconX className="h-4 w-4 mr-2" />
-                Cancel
+                {loading ? (
+                  <Loader2 className='animate-spin h-4 w-4' />
+                ) : (
+                  <>
+                    Find specialists
+                    <IconCaretRightFilled className="h-3 w-3 ml-1" />
+                  </>
+                )}
               </Button>
-            </DialogClose>
-            <Button 
-  type="button" 
-  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center justify-center"
-  disabled={!note || note.trim().length === 0}
-  onClick={OnClickNext}
->
-  Next
-  <IconCaretRightFilled className="h-4 w-4" />
-</Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="py-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {suggestedDoctors.map((doctor, index) => (
+                <CompactDoctorCard 
+                  key={index} 
+                  doctor={doctor} 
+                  onClick={() => handleStartConsultation(doctor)}
+                />
+              ))}
+            </div>
+            <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-neutral-700">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 text-sm py-2"
+                onClick={() => setSuggestedDoctors(undefined)}
+              >
+                Back
+              </Button>
+              <DialogClose asChild>
+                <Button type="button" className="flex-1 text-sm py-2">
+                  Cancel
+                </Button>
+              </DialogClose>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
 }
 
-export default AddNewSessionDialog
+export default AddNewSessionDialog;

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest){
    
    try {
     const completion = await openai.chat.completions.create({
-      model: 'deepseek/deepseek-chat-v3.1:free',
+      model: 'x-ai/grok-4-fast:free',
       messages: [
         {
           role: 'system',
