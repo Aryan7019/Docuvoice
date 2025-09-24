@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import axios from 'axios'
 import { DoctorAgent } from '../../components/DoctorAgentsList'
 import { Circle, Bot, MessageCircle, PhoneOff, PhoneCall, Loader2 } from 'lucide-react'
-import { Navbar } from '@/app/page'
+import { Navbar } from '@/app/_components/Navbar'
 import Image from 'next/image'
 import Vapi from '@vapi-ai/web';
 
