@@ -8,56 +8,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
-import { IconMicrophone, IconVideo, IconPlus, IconCaretRightFilled, IconCrown, } from "@tabler/icons-react"
+import { IconMicrophone, IconVideo, IconPlus, IconCaretRightFilled } from "@tabler/icons-react"
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { DoctorAgent } from './DoctorAgentsList'
 import { Loader2 } from 'lucide-react'
-
-const CompactDoctorCard = ({ doctor, onClick }: { doctor: DoctorAgent; onClick: () => void }) => {
-  return (
-    <div 
-      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 dark:bg-neutral-800 dark:border-neutral-600 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 cursor-pointer flex flex-col h-full group"
-      onClick={onClick}>
-      <div className="flex flex-col items-center pt-3 px-3">
-        {/* Circular Doctor Image */}
-        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-blue-400 transition-colors duration-200 mb-2">
-          <img
-            src={doctor.image}
-            alt={doctor.specialist}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        
-        <div className="flex justify-center items-center gap-1 mb-1 w-full">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-xs text-center group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors duration-200">
-            {doctor.specialist}
-          </h3>
-          {doctor.subscriptionRequired && (
-            <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
-              <IconCrown className="h-2.5 w-2.5" />
-            </span>
-          )}
-        </div>
-      </div>
-      
-      <div className="flex flex-col flex-1 p-3 pt-0">
-        {/* Full Description */}
-        <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-2 flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors duration-200 leading-relaxed">
-          {doctor.description}
-        </p>
-      </div>
-    </div>
-  )
-}
+import { CompactDoctorCard, useSelectedDoctor } from './selectedDoctorCard'
+import { useRouter } from 'next/navigation'
 
 function AddNewSessionDialog() {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [suggestedDoctors, setSuggestedDoctors] = useState<DoctorAgent[]>();
+  const { selectedDoctor, setSelectedDoctor } = useSelectedDoctor();
+  const router = useRouter();
 
   const onClickNext = async () => {
     setLoading(true);
@@ -72,22 +38,97 @@ function AddNewSessionDialog() {
     }
   }
 
+  const resetDialog = () => {
+    setNote('');
+    setLoading(false);
+    setSuggestedDoctors(undefined);
+    setSelectedDoctor(null);
+  }
+
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
-      // Reset state when dialog is closed, ensuring a fresh start next time
-      setNote('');
-      setLoading(false);
-      setSuggestedDoctors(undefined);
+      resetDialog();
     }
   };
 
-  const handleStartConsultation = (doctor: DoctorAgent) => {
-    // Handle starting consultation with the selected doctor
-    console.log("Starting consultation with:", doctor);
-    // Add your consultation page navigation logic here
-    // For example: router.push(`/consultation/${doctor.id}`);
-    setOpen(false); // Close the dialog
+  const handleSelectDoctor = (doctor: DoctorAgent) => {
+    setSelectedDoctor(doctor);
+  };
+
+  const handleStartConsultation = async () => {
+  if (!selectedDoctor) {
+    console.error("No doctor selected.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    console.log("Sending request to create session...");
+    console.log("Notes:", note);
+    console.log("Selected Doctor:", selectedDoctor);
+
+    const result = await axios.post('/api/session-chat', {
+      notes: note || "", // Ensure notes is not undefined
+      selectedDoctor: selectedDoctor
+    });
+
+    console.log("Full API response:", result);
+    console.log("Response data:", result.data);
+
+    if (result.data?.sessionId) {
+      console.log("Session ID received:", result.data.sessionId);
+      
+      // Close dialog first
+      setOpen(false);
+      resetDialog();
+      
+      // Use both router and fallback
+      const sessionUrl = `/dashboard/medical-agent/${result.data.sessionId}`;
+      console.log("Redirecting to:", sessionUrl);
+      
+      router.push(sessionUrl);
+      
+      // Fallback: if router doesn't work within 1 second
+      setTimeout(() => {
+        if (window.location.pathname !== sessionUrl) {
+          window.location.href = sessionUrl;
+        }
+      }, 1000);
+      
+    } else {
+      console.error("No sessionId in response:", result.data);
+      alert("Failed to create session. Please try again.");
+    }
+    
+  } catch (error: any) {
+    console.error("Failed to create session:", error);
+    
+    // Detailed error logging
+    if (error.response) {
+      console.error("Response error data:", error.response.data);
+      console.error("Response error status:", error.response.status);
+      alert(`Error: ${error.response.data?.error || "Failed to create session"}`);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+      alert("Network error. Please check your connection.");
+    } else {
+      console.error("Error message:", error.message);
+      alert("An unexpected error occurred.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleCancelClick = () => {
+    setOpen(false);
+    resetDialog();
+  };
+
+  const handleBackClick = () => {
+    setSuggestedDoctors(undefined);
+    setSelectedDoctor(null);
   };
 
   return (
@@ -127,6 +168,11 @@ function AddNewSessionDialog() {
               <h4 className="font-medium text-gray-800 dark:text-gray-200">
                 Based on your notes, we suggest:
               </h4>
+              {selectedDoctor && (
+                <p className="text-blue-600 dark:text-blue-400 mt-1">
+                  Selected: {selectedDoctor.specialist}
+                </p>
+              )}
             </div>
           )}
         </DialogHeader>
@@ -142,17 +188,21 @@ function AddNewSessionDialog() {
                 placeholder="Describe your symptoms, duration, severity..."
                 className="min-h-[100px] text-sm resize-none border-gray-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white"
                 onChange={(e) => setNote(e.target.value)}
+                value={note}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 The more details you provide, the better the AI can assist you.
               </p>
             </div>
             <div className="flex gap-3 pt-2">
-              <DialogClose asChild>
-                <Button type="button" variant="outline" className="flex-1 text-sm py-2">
-                  Cancel
-                </Button>
-              </DialogClose>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 text-sm py-2"
+                onClick={handleCancelClick}
+              >
+                Cancel
+              </Button>
               <Button
                 type="button"
                 className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm py-2"
@@ -172,29 +222,41 @@ function AddNewSessionDialog() {
           </div>
         ) : (
           <div className="py-2">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               {suggestedDoctors.map((doctor, index) => (
-                <CompactDoctorCard 
-                  key={index} 
-                  doctor={doctor} 
-                  onClick={() => handleStartConsultation(doctor)}
+                <CompactDoctorCard
+                  key={index}
+                  doctor={doctor}
+                  onSelectDoctor={handleSelectDoctor}
+                  isSelected={selectedDoctor?.id === doctor.id}
                 />
               ))}
             </div>
-            <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-neutral-700">
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-neutral-700">
               <Button
                 type="button"
                 variant="outline"
                 className="flex-1 text-sm py-2"
-                onClick={() => setSuggestedDoctors(undefined)}
+                onClick={handleBackClick}
               >
                 Back
               </Button>
-              <DialogClose asChild>
-                <Button type="button" className="flex-1 text-sm py-2">
-                  Cancel
-                </Button>
-              </DialogClose>
+              <Button
+                type="button"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm py-2"
+                disabled={!selectedDoctor || loading}
+                onClick={handleStartConsultation}
+              >
+                {loading ? (
+                  <Loader2 className='animate-spin h-4 w-4' />
+                ) : (
+                  <>
+                    <IconMicrophone className="h-4 w-4 mr-1" />
+                    Start Consultation
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}

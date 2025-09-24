@@ -107,12 +107,11 @@ export default function Home() {
   );
 }
 
-const Navbar = () => {
+export const Navbar = () => {
   const { user } = useUser();
   const { isLoaded } = useAuth(); // Add this to check if auth is loaded
   const [isClient, setIsClient] = useState(false);
   
-  // This prevents hydration issues
   useEffect(() => {
     setIsClient(true);
   }, []);
