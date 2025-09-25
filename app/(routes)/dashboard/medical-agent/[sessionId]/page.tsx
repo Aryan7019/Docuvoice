@@ -23,18 +23,22 @@ type Message = {
     role: 'user' | 'assistant' | 'system';
     content: string;
     timestamp: Date;
+    isComplete?: boolean; // New field to track if message is complete
 }
 
 function MedicalVoiceAgent() {
     const { sessionId } = useParams();
     const [sessionDetails, setSessionDetails] = useState<SessionDetail | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [isConnecting, setIsConnecting] = useState(false); // New state for connection loading
+    const [isConnecting, setIsConnecting] = useState(false);
     const [callTimer, setCallTimer] = useState(0);
     const [messages, setMessages] = useState<Message[]>([]);
     const [vapi, setVapi] = useState<any>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    // Track the last assistant message ID for updates
+    const lastAssistantMessageIdRef = useRef<string | null>(null);
 
     // Auto-scroll to bottom when new messages are added
     const scrollToBottom = () => {
@@ -55,47 +59,117 @@ function MedicalVoiceAgent() {
             vapiInstance.on('call-start', () => {
                 console.log('Call started');
                 setIsConnected(true);
-                setIsConnecting(false); // Stop loading when call starts
+                setIsConnecting(false);
             });
 
             vapiInstance.on('call-end', () => {
                 console.log('Call ended');
                 setIsConnected(false);
-                setIsConnecting(false); // Stop loading when call ends
+                setIsConnecting(false);
+                // Reset last assistant message ID when call ends
+                lastAssistantMessageIdRef.current = null;
             });
 
             vapiInstance.on('message', (message: any) => {
-                if (message.type === 'transcript') {
-                    console.log(`${message.role}: ${message.transcript}`);
+    if (message.type === 'transcript') {
+        console.log(`${message.role}: ${message.transcript}`);
+        
+        setMessages(prev => {
+            // For user messages, always create a new message
+            if (message.role === 'user') {
+                return [...prev, {
+                    id: Date.now().toString() + Math.random(),
+                    role: 'user' as const, // Explicitly type as const
+                    content: message.transcript,
+                    timestamp: new Date(),
+                    isComplete: true
+                }];
+            }
+            
+            // For assistant messages
+            if (message.role === 'assistant') {
+                const currentLastMessage = prev[prev.length - 1];
+                
+                // If the last message is from assistant and not complete, update it
+                if (currentLastMessage && 
+                    currentLastMessage.role === 'assistant' && 
+                    currentLastMessage.id === lastAssistantMessageIdRef.current &&
+                    !currentLastMessage.isComplete) {
                     
-                    setMessages(prev => {
-                        const lastMessage = prev[prev.length - 1];
+                    // Check if this is a continuation or new thought
+                    const isContinuation = message.transcript.toLowerCase().startsWith(
+                        currentLastMessage.content.toLowerCase().substring(0, 10)
+                    );
+                    
+                    if (isContinuation) {
+                        // Update existing assistant message
+                        return prev.map(msg => 
+                            msg.id === lastAssistantMessageIdRef.current 
+                                ? { ...msg, content: message.transcript }
+                                : msg
+                        );
+                    } else {
+                        // New thought - mark previous as complete and create new message
+                        const updatedPrev = prev.map(msg => 
+                            msg.id === lastAssistantMessageIdRef.current 
+                                ? { ...msg, isComplete: true }
+                                : msg
+                        );
                         
-                        // If the last message is from the same role and it's the assistant, update it instead of adding new line
-                        if (lastMessage && lastMessage.role === message.role && message.role === 'assistant') {
-                            // Update the existing assistant message
-                            const updatedMessages = [...prev];
-                            updatedMessages[updatedMessages.length - 1] = {
-                                ...lastMessage,
-                                content: message.transcript
-                            };
-                            return updatedMessages;
-                        } else {
-                            // Add new message for user or new assistant message
-                            return [...prev, {
-                                id: Date.now().toString() + Math.random(),
-                                role: message.role === 'user' ? 'user' : 'assistant',
-                                content: message.transcript,
-                                timestamp: new Date()
-                            }];
-                        }
-                    });
+                        const newMessage: Message = { // Explicitly type as Message
+                            id: Date.now().toString() + Math.random(),
+                            role: 'assistant',
+                            content: message.transcript,
+                            timestamp: new Date(),
+                            isComplete: false
+                        };
+                        
+                        lastAssistantMessageIdRef.current = newMessage.id;
+                        return [...updatedPrev, newMessage];
+                    }
+                } else {
+                    // Create new assistant message
+                    const newMessage: Message = { // Explicitly type as Message
+                        id: Date.now().toString() + Math.random(),
+                        role: 'assistant',
+                        content: message.transcript,
+                        timestamp: new Date(),
+                        isComplete: false
+                    };
+                    
+                    lastAssistantMessageIdRef.current = newMessage.id;
+                    return [...prev, newMessage];
                 }
+            }
+            
+            return prev;
+        });
+    }
+});
+
+            // Handle speech start/end to mark messages as complete
+            vapiInstance.on('speech-start', () => {
+                console.log('Speech started');
+            });
+
+            vapiInstance.on('speech-end', () => {
+                console.log('Speech ended');
+                // Mark the last assistant message as complete when speech ends
+                setMessages(prev => {
+                    if (lastAssistantMessageIdRef.current) {
+                        return prev.map(msg => 
+                            msg.id === lastAssistantMessageIdRef.current 
+                                ? { ...msg, isComplete: true }
+                                : msg
+                        );
+                    }
+                    return prev;
+                });
             });
 
             vapiInstance.on('error', (error: any) => {
                 console.error('VAPI error:', error);
-                setIsConnecting(false); // Stop loading on error
+                setIsConnecting(false);
             });
 
             return () => {
@@ -109,13 +183,14 @@ function MedicalVoiceAgent() {
         if (!vapi) return;
         
         try {
-            setIsConnecting(true); // Start loading
-            // Clear previous messages
+            setIsConnecting(true);
+            // Clear previous messages and reset state
             setMessages([]);
+            lastAssistantMessageIdRef.current = null;
             await vapi.start(process.env.NEXT_PUBLIC_VAPI_VOICE_ASSISTANT_ID!);
         } catch (error) {
             console.error('Failed to start call:', error);
-            setIsConnecting(false); // Stop loading on error
+            setIsConnecting(false);
         }
     }
 
@@ -124,6 +199,14 @@ function MedicalVoiceAgent() {
         
         try {
             vapi.stop();
+            // Mark any incomplete assistant messages as complete when call ends
+            setMessages(prev => 
+                prev.map(msg => 
+                    msg.role === 'assistant' && !msg.isComplete 
+                        ? { ...msg, isComplete: true }
+                        : msg
+                )
+            );
         } catch (error) {
             console.error('Failed to end call:', error);
         }
@@ -167,6 +250,21 @@ function MedicalVoiceAgent() {
         return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    // Group consecutive messages from the same role
+    const groupedMessages = messages.reduce<Message[][]>((groups, message) => {
+        const lastGroup = groups[groups.length - 1];
+        
+        if (lastGroup && lastGroup[0].role === message.role) {
+            // Add to existing group if same role
+            lastGroup.push(message);
+        } else {
+            // Start new group
+            groups.push([message]);
+        }
+        
+        return groups;
+    }, []);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-neutral-900 dark:via-neutral-950 dark:to-purple-900/20 relative">
             {/* Animated background elements */}
@@ -191,7 +289,6 @@ function MedicalVoiceAgent() {
                                     : 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800'
                             }`}>
                                 <div className="relative flex items-center justify-center">
-                                    {/* Animated Pulse Effect when Connected */}
                                     {isConnected && (
                                         <div className="absolute inset-0 animate-ping bg-green-400 rounded-full opacity-75"></div>
                                     )}
@@ -235,7 +332,7 @@ function MedicalVoiceAgent() {
                 </div>
 
                 {sessionDetails?.selectedDoctor ? (
-                    <div className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 space-y-8 flex-1 max-w-4xl mx-auto w-full">
+                    <div className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 space-y-8 flex-1 max-w-4xl mx-auto w-full pb-8">
                         {/* AI Agent Profile Section */}
                         <div className="flex flex-col items-center text-center space-y-6 w-full">
                             <div className="relative group">
@@ -283,8 +380,8 @@ function MedicalVoiceAgent() {
                                 ref={chatContainerRef}
                                 className="h-64 sm:h-80 w-full p-6 rounded-2xl bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-gray-200 dark:border-neutral-700 shadow-lg overflow-y-auto"
                             >
-                                <div className="flex flex-col space-y-4 min-h-full">
-                                    {messages.length === 0 ? (
+                                <div className="flex flex-col space-y-3 min-h-full">
+                                    {groupedMessages.length === 0 ? (
                                         <div className="flex-1 flex items-center justify-center">
                                             <div className="text-center py-8">
                                                 <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400">
@@ -296,23 +393,35 @@ function MedicalVoiceAgent() {
                                             </div>
                                         </div>
                                     ) : (
-                                        messages.map((message) => (
-                                            <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                {message.role === 'assistant' && (
+                                        groupedMessages.map((messageGroup, groupIndex) => (
+                                            <div key={groupIndex} className={`flex ${messageGroup[0].role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                {messageGroup[0].role === 'assistant' && (
                                                     <div className="flex-shrink-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-2 h-8 w-8 mt-1 mr-2 flex items-center justify-center">
                                                         <Bot className="h-3 w-3 text-white" />
                                                     </div>
                                                 )}
                                                 <div className={`flex-1 max-w-xs sm:max-w-md ${
-                                                    message.role === 'user' 
+                                                    messageGroup[0].role === 'user' 
                                                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl rounded-tr-none' 
                                                         : 'bg-white dark:bg-neutral-800 rounded-2xl rounded-tl-none'
                                                 } px-4 py-3 shadow-lg border border-gray-100 dark:border-neutral-700`}>
-                                                    <p className={`${message.role === 'user' ? 'text-white' : 'text-gray-700 dark:text-gray-300'} whitespace-normal break-words`}>
-                                                        {message.content}
-                                                    </p>
-                                                    <span className={`text-xs ${message.role === 'user' ? 'text-blue-200' : 'text-gray-500'} mt-1 block`}>
-                                                        {formatMessageTime(message.timestamp)}
+                                                    {/* For user groups, show each message as separate paragraph */}
+                                                    {messageGroup[0].role === 'user' ? (
+                                                        <div className="space-y-2">
+                                                            {messageGroup.map((message, idx) => (
+                                                                <p key={message.id} className="whitespace-normal break-words">
+                                                                    {message.content}
+                                                                </p>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        /* For assistant, show the latest message content (real-time updates) */
+                                                        <p className="whitespace-normal break-words text-gray-700 dark:text-gray-300">
+                                                            {messageGroup[messageGroup.length - 1].content}
+                                                        </p>
+                                                    )}
+                                                    <span className={`text-xs ${messageGroup[0].role === 'user' ? 'text-blue-200' : 'text-gray-500'} mt-1 block`}>
+                                                        {formatMessageTime(messageGroup[messageGroup.length - 1].timestamp)}
                                                     </span>
                                                 </div>
                                             </div>
@@ -336,7 +445,6 @@ function MedicalVoiceAgent() {
                                         : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
                                 }`}
                             >
-                                {/* Shine effect - only when not connecting */}
                                 {!isConnecting && (
                                     <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                                 )}
