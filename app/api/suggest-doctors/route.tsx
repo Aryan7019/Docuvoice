@@ -12,7 +12,7 @@ export async function POST(req: NextRequest){
    
    try {
     const completion = await openai.chat.completions.create({
-      model: 'x-ai/grok-4-fast:free',
+      model: 'google/gemini-2.0-flash-exp:free',
       messages: [
         {
           role: 'system',
