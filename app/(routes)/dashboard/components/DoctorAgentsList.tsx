@@ -9,6 +9,8 @@ export type DoctorAgent = {
   description: string;
   image: string;
   subscriptionRequired: boolean;
+  voiceId: string;
+  agentPrompt: string;
 };
 
 export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
