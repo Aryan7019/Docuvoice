@@ -3,6 +3,7 @@
 
 import { IconCalendar, IconClock, IconFileReport } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import moment from "moment";
 import { useState } from "react";
 import { ReportDialog } from "./report-dialog";
@@ -96,15 +97,18 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
   // MODIFIED: Handle null input
   const getReportData = (consultation: Consultation | null) => {
     if (!consultation || !consultation.report) {
+      console.log("No consultation or report data:", { consultation: !!consultation, report: !!consultation?.report });
       return null;
     }
     try {
-      return typeof consultation.report === 'string'
+      const parsed = typeof consultation.report === 'string'
         ? JSON.parse(consultation.report)
         : consultation.report;
+      console.log("Successfully parsed report data:", parsed);
+      return parsed;
     } catch (error)
     {
-      console.error("Failed to parse report in getReportData:", error);
+      console.error("Failed to parse report in getReportData:", error, "Raw report:", consultation.report);
       return null;
     }
   };
@@ -115,8 +119,32 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
     return report?.chiefComplaint || "Medical Consultation";
   };
 
+  // Helper function to get severity
+  const getSeverity = (consultation: Consultation) => {
+    const report = getReportData(consultation);
+    return report?.severity || null;
+  };
+
+  // Severity badge color
+  const getSeverityColor = (severity: string) => {
+    if (!severity) return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800';
+    
+    switch (severity.toLowerCase()) {
+      case 'mild':
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
+      case 'moderate':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800';
+      case 'severe':
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
+      default:
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
+    }
+  };
+
   const handleShowReport = (consultation: Consultation) => {
     console.log("Showing report for consultation:", consultation);
+    console.log("Report data:", consultation.report);
+    console.log("Selected doctor:", consultation.selectedDoctor);
     setSelectedConsultation(consultation);
     setIsDialogOpen(true);
   };
@@ -176,6 +204,7 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
                 <tr>
                   <th className="text-left py-3 px-4 font-semibold text-sm">Doctor</th>
                   <th className="text-left py-3 px-4 font-semibold text-sm">Chief Complaint</th>
+                  <th className="text-left py-3 px-4 font-semibold text-sm">Severity</th>
                   <th className="text-left py-3 px-4 font-semibold text-sm">Time</th>
                   <th className="text-right py-3 px-4 font-semibold text-sm">Report</th>
                 </tr>
@@ -184,6 +213,7 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
                 {consultations.map((consultation) => {
                   const doctorInfo = getDoctorInfo(consultation);
                   const chiefComplaint = getChiefComplaint(consultation);
+                  const severity = getSeverity(consultation);
 
                   return (
                     <tr key={consultation.id} className="border-b hover:bg-gray-50/50 dark:hover:bg-neutral-800/50">
@@ -197,6 +227,15 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
                         <div className="max-w-[200px]">
                           <span className="text-sm line-clamp-2">{chiefComplaint}</span>
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {severity ? (
+                          <Badge className={`text-xs font-medium ${getSeverityColor(severity)}`}>
+                            {severity.charAt(0).toUpperCase() + severity.slice(1)}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Not specified</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm">

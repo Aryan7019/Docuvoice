@@ -4,21 +4,18 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   IconCalendar,
-  IconClock,
   IconUser,
   IconFileReport,
   IconAlertTriangle,
   IconPill,
   IconHeartbeat,
   IconChecklist,
-  IconStar,
   IconNotes
 } from "@tabler/icons-react";
 import moment from "moment";
@@ -39,6 +36,85 @@ interface ReportDialogProps {
   onClose: () => void;
 }
 
+// Modular components for better organization
+const ReportHeader = ({ doctorInfo, consultationDetails, report }: { 
+  doctorInfo: any, 
+  consultationDetails: any, 
+  report: any 
+}) => (
+  <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="flex items-start gap-4">
+        <div className="p-3 bg-blue-500 rounded-lg shadow-sm flex-shrink-0">
+          <IconUser className="h-5 w-5 text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Doctor</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            {report?.agent || doctorInfo.doctor}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {doctorInfo.specialty}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-4">
+        <div className="p-3 bg-blue-500 rounded-lg shadow-sm flex-shrink-0">
+          <IconCalendar className="h-5 w-5 text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Date</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            {moment(consultationDetails.createdOn).format("MMM D, YYYY")}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {moment(consultationDetails.createdOn).format("h:mm A")}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const InfoCard = ({ 
+  icon: Icon, 
+  title, 
+  children, 
+  iconColor = "blue" 
+}: { 
+  icon: any, 
+  title: string, 
+  children: React.ReactNode, 
+  iconColor?: string 
+}) => {
+  const colorClasses = {
+    blue: "bg-blue-500 text-white",
+    orange: "bg-orange-500 text-white", 
+    red: "bg-red-500 text-white",
+    green: "bg-green-500 text-white",
+    yellow: "bg-yellow-500 text-white",
+    indigo: "bg-indigo-500 text-white",
+    teal: "bg-teal-500 text-white"
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+      <div className="p-4 pb-3">
+        <h3 className="flex items-start gap-3 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className={`p-2 rounded-lg flex-shrink-0 ${colorClasses[iconColor as keyof typeof colorClasses]}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <span className="min-w-0 flex-1">{title}</span>
+        </h3>
+      </div>
+      <div className="px-4 pb-4">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 export function ReportDialog({
   report,
   doctorInfo,
@@ -51,7 +127,7 @@ export function ReportDialog({
 
   const hasReportData = report && Object.keys(report).length > 0;
 
-  // Severity badge color
+  // Severity badge color with blue theme
   const getSeverityColor = (severity: string) => {
     if (!severity) return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800';
     
@@ -63,21 +139,21 @@ export function ReportDialog({
       case 'severe':
         return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800';
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
     }
   };
 
   // Helper function to safely render arrays
   const renderArrayItems = (items: string[] | undefined, fallbackText: string) => {
     if (!items || items.length === 0) {
-      return <p className="text-gray-500 dark:text-gray-400 italic">{fallbackText}</p>;
+      return <p className="text-gray-500 dark:text-gray-400 italic text-sm">{fallbackText}</p>;
     }
     return (
       <ul className="space-y-2">
         {items.map((item, index) => (
-          <li key={index} className="flex items-start gap-2">
-            <div className="w-2 h-2 bg-current rounded-full mt-2 flex-shrink-0"></div>
-            <span className="text-gray-700 dark:text-gray-300">{item}</span>
+          <li key={index} className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+            <span className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{item}</span>
           </li>
         ))}
       </ul>
@@ -86,229 +162,121 @@ export function ReportDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <IconFileReport className="h-5 w-5 text-blue-600" />
-            Medical Consultation Report
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-6">
+          <DialogTitle className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500 rounded-lg">
+              <IconFileReport className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold">Medical Report</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-normal">
+                Consultation with {doctorInfo.doctor}
+              </p>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Detailed report for your consultation with {doctorInfo.doctor}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Header */}
-          <div className="text-center border-b-2 border-gray-300 pb-4 mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Medical Consultation Report</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">DocuVoice AI Medical Assistant</p>
-          </div>
-
           {/* Consultation Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <IconUser className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Doctor</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {report?.agent || doctorInfo.doctor}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {doctorInfo.specialty}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <IconCalendar className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Consultation Date</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {moment(consultationDetails.createdOn).format("MMMM D, YYYY")}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {moment(consultationDetails.createdOn).format("h:mm A")}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <IconClock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Duration</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {report?.duration || consultationDetails.consultationDuration
-                    ? report?.duration || `${Math.round(consultationDetails.consultationDuration! / 60)} minutes`
-                    : 'Not recorded'
-                  }
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Session length
-                </p>
-              </div>
-            </div>
-          </div>
+          <ReportHeader 
+            doctorInfo={doctorInfo}
+            consultationDetails={consultationDetails}
+            report={report}
+          />
 
           {/* Patient Information */}
           {report?.user && report.user !== "Anonymous" && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-blue-500 pl-3 flex items-center gap-2">
-                <IconUser className="h-5 w-5 text-blue-500" />
-                Patient Information
-              </h3>
-              <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                <p className="text-gray-700 dark:text-gray-300">
-                  <span className="font-medium">Patient Name:</span> {report.user}
-                </p>
-              </div>
-            </div>
+            <InfoCard icon={IconUser} title="Patient Information" iconColor="blue">
+              <p className="text-gray-700 dark:text-gray-300">
+                <span className="font-medium">Patient Name:</span> {report.user}
+              </p>
+            </InfoCard>
           )}
 
           {/* Chief Complaint */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-orange-500 pl-3 flex items-center gap-2">
-              <IconAlertTriangle className="h-5 w-5 text-orange-500" />
-              Chief Complaint
-            </h3>
-            <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-              <p className="text-gray-700 dark:text-gray-300">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-4 pb-3">
+              <h3 className="flex items-start justify-between gap-3 text-lg font-semibold text-gray-900 dark:text-white">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg flex-shrink-0 bg-orange-500 text-white">
+                    <IconAlertTriangle className="h-5 w-5" />
+                  </div>
+                  <span className="min-w-0 flex-1">Chief Complaint</span>
+                </div>
+                {report?.severity && (
+                  <Badge className={`text-sm font-medium ${getSeverityColor(report.severity)}`}>
+                    {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}
+                  </Badge>
+                )}
+              </h3>
+            </div>
+            <div className="px-4 pb-4">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 {report?.chiefComplaint || "No chief complaint recorded"}
               </p>
             </div>
           </div>
 
-          {/* Symptoms & Severity */}
-          {hasReportData && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Symptoms */}
-              {report.symptoms && report.symptoms.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-red-500 pl-3 flex items-center gap-2">
-                    <IconHeartbeat className="h-5 w-5 text-red-500" />
-                    Symptoms
-                  </h3>
-                  <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                    {renderArrayItems(report.symptoms, "No symptoms recorded")}
-                  </div>
-                </div>
-              )}
-
-              {/* Severity & Duration */}
-              <div className="space-y-4">
-                {/* Severity */}
-                {report.severity && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-yellow-500 pl-3 flex items-center gap-2">
-                      <IconStar className="h-5 w-5 text-yellow-500" />
-                      Condition Severity
-                    </h3>
-                    <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                      <Badge className={`text-sm font-medium ${getSeverityColor(report.severity)}`}>
-                        {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
-                {/* Duration */}
-                {report.duration && report.duration !== "Not specified" && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-purple-500 pl-3 flex items-center gap-2">
-                      <IconClock className="h-5 w-5 text-purple-500" />
-                      Symptom Duration
-                    </h3>
-                    <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                      <p className="text-gray-700 dark:text-gray-300">{report.duration}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Symptoms */}
+          {hasReportData && report.symptoms && report.symptoms.length > 0 && (
+            <InfoCard icon={IconHeartbeat} title="Symptoms" iconColor="red">
+              {renderArrayItems(report.symptoms, "No symptoms recorded")}
+            </InfoCard>
           )}
 
           {/* Summary */}
           {report?.summary && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-green-500 pl-3 flex items-center gap-2">
-                <IconNotes className="h-5 w-5 text-green-500" />
-                Consultation Summary
-              </h3>
-              <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {report.summary}
-                </p>
-              </div>
-            </div>
+            <InfoCard icon={IconNotes} title="Consultation Summary" iconColor="green">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                {report.summary}
+              </p>
+            </InfoCard>
           )}
 
           {/* Medications */}
           {hasReportData && report.medicationsMentioned && report.medicationsMentioned.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-indigo-500 pl-3 flex items-center gap-2">
-                <IconPill className="h-5 w-5 text-indigo-500" />
-                Medications Mentioned
-              </h3>
-              <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                <div className="flex flex-wrap gap-2">
-                  {report.medicationsMentioned.map((medication: string, index: number) => (
-                    <Badge
-                      key={index}
-                      variant="outline"
-                      className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800"
-                    >
-                      {medication}
-                    </Badge>
-                  ))}
-                </div>
+            <InfoCard icon={IconPill} title="Medications Mentioned" iconColor="indigo">
+              <div className="flex flex-wrap gap-2">
+                {report.medicationsMentioned.map((medication: string, index: number) => (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                  >
+                    {medication}
+                  </Badge>
+                ))}
               </div>
-            </div>
+            </InfoCard>
           )}
 
           {/* Recommendations */}
           {hasReportData && report.recommendations && report.recommendations.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-teal-500 pl-3 flex items-center gap-2">
-                <IconChecklist className="h-5 w-5 text-teal-500" />
-                Medical Recommendations
-              </h3>
-              <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                {renderArrayItems(report.recommendations, "No specific recommendations provided")}
-              </div>
-            </div>
+            <InfoCard icon={IconChecklist} title="Medical Recommendations" iconColor="teal">
+              {renderArrayItems(report.recommendations, "No specific recommendations provided")}
+            </InfoCard>
           )}
 
           {/* No Report Data Fallback */}
           {!hasReportData && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-l-4 border-gray-500 pl-3">
-                Medical Assessment
-              </h3>
-              <div className="p-4 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Consultation Details</h4>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      This consultation was completed successfully. Detailed report analysis is not available.
-                    </p>
-                  </div>
-                </div>
+            <InfoCard icon={IconFileReport} title="Medical Assessment" iconColor="blue">
+              <div>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Consultation Details</h4>
+                <p className="text-gray-600 dark:text-gray-400">
+                  This consultation was completed successfully. Detailed report analysis is not available.
+                </p>
               </div>
-            </div>
+            </InfoCard>
           )}
 
           {/* Medical Disclaimer */}
-          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <h4 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2 flex items-center gap-2">
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2 flex items-center gap-2">
               <IconAlertTriangle className="h-4 w-4" />
               Important Medical Disclaimer
             </h4>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
               This AI-powered consultation is for informational purposes only and should not replace professional medical advice.
               Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
             </p>

@@ -190,7 +190,7 @@ const WelcomeBanner = () => {
   const { user } = useUser();
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 lg:p-6 xl:p-8 text-white">
+    <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-4 lg:p-6 xl:p-8 text-white">
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-2 truncate">
@@ -256,11 +256,15 @@ const Workspace = () => {
           const transformedData: Consultation[] = (data.consultations || []).map((consult: any) => ({
             id: consult.id?.toString() || consult.sessionId,
             sessionId: consult.sessionId,
-            doctor: consult.report?.agent || consult.selectedDoctor?.specialist || "AI Doctor",
-            specialty: consult.selectedDoctor?.specialist || "General Medicine",
-            timestamp: consult.createdOn || consult.report?.timestamp || new Date().toISOString(),
-            chiefComplaint: consult.report?.chiefComplaint || consult.notes || "No details available",
-            consultationDuration: consult.consultationDuration || 0, // Use actual duration
+            createdBy: consult.createdBy,
+            notes: consult.notes,
+            selectedDoctor: consult.selectedDoctor,
+            report: consult.report,
+            conversation: consult.conversation,
+            createdOn: consult.createdOn,
+            consultationDuration: consult.consultationDuration,
+            callStartedAt: consult.callStartedAt,
+            callEndedAt: consult.callEndedAt,
           }));
           setConsultations(transformedData);
         }
