@@ -16,5 +16,8 @@ export const SessionChatTable = pgTable('sessionChatTable', {
   selectedDoctor: json(),
   report: json(),
   conversation: json(), 
-  createdOn: varchar({ length: 255 }), 
+  createdOn: varchar({ length: 255 }),
+  consultationDuration: integer(),
+  callStartedAt: varchar({ length: 255 }),
+  callEndedAt: varchar({ length: 255 }), 
 });

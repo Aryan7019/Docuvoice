@@ -1,3 +1,4 @@
+// app/(routes)/dashboard/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,6 +12,7 @@ import {
   IconDashboard,
   IconUser,
   IconCurrencyDollar,
+  IconCalendar,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -18,7 +20,7 @@ import { useUser } from "@clerk/nextjs";
 import { AIDoctorAgents } from "./components/list";
 import { useRouter, usePathname } from "next/navigation";
 import AddNewSessionDialog from "./components/AddNewSessionDialog";
-import ConsultationHistory, { Consultation } from "./components/HistoryList";
+import ConsultationHistory, { Consultation } from "./components/ConsultationHistory";
 import DoctorAgentsList from "./components/DoctorAgentsList";
 
 // Custom SidebarLink component with active state and open/closed awareness
@@ -40,19 +42,19 @@ const CustomSidebarLink = ({
       className="relative"
     >
       <button
-  onClick={onClick}
-  className={cn(
-    "flex items-center font-medium transition-all duration-200 text-sm", // Removed w-full from here
-    "group hover:bg-blue-50 dark:hover:bg-blue-950/30",
-    "rounded-full",
-    isOpen
-      ? "w-full justify-start gap-3 px-3 py-2.5" // Added w-full here
-      : "justify-center p-2.5", // This now correctly forms a circle
-    isActive
-      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
-      : "text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400"
-  )}
->
+        onClick={onClick}
+        className={cn(
+          "flex items-center font-medium transition-all duration-200 text-sm",
+          "group hover:bg-blue-50 dark:hover:bg-blue-950/30",
+          "rounded-full",
+          isOpen
+            ? "w-full justify-start gap-3 px-3 py-2.5"
+            : "justify-center p-2.5",
+          isActive
+            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
+            : "text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400"
+        )}
+      >
         <div
           className={cn(
             "transition-colors duration-200 flex items-center justify-center",
@@ -83,8 +85,8 @@ const CustomSidebarLink = ({
             className={cn(
               "absolute bg-blue-500 rounded-full",
               isOpen 
-                ? "right-3 top-1/2 h-2 w-2 -translate-y-1/2" // Circular indicator for open state
-                : "top-1/2 -right-1 h-2 w-2 -translate-y-1/2" // Circular indicator for closed state
+                ? "right-3 top-1/2 h-2 w-2 -translate-y-1/2"
+                : "top-1/2 -right-1 h-2 w-2 -translate-y-1/2"
             )}
           />
         )}
@@ -112,19 +114,19 @@ const UserProfileLink = ({
       className="relative"
     >
       <button
-  onClick={onClick}
-  className={cn(
-    "flex items-center font-medium transition-all duration-200 text-sm", // Removed w-full from here
-    "group hover:bg-blue-50 dark:hover:bg-blue-950/30",
-    "rounded-full",
-    isOpen
-      ? "w-full justify-start gap-3 px-3 py-2.5" // Added w-full here
-      : "justify-center p-2.5", // This now correctly forms a circle
-    isActive
-      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
-      : "text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400"
-  )}
->
+        onClick={onClick}
+        className={cn(
+          "flex items-center font-medium transition-all duration-200 text-sm",
+          "group hover:bg-blue-50 dark:hover:bg-blue-950/30",
+          "rounded-full",
+          isOpen
+            ? "w-full justify-start gap-3 px-3 py-2.5"
+            : "justify-center p-2.5",
+          isActive
+            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
+            : "text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400"
+        )}
+      >
         <div
           className={cn(
             "transition-colors duration-200 flex items-center justify-center",
@@ -208,7 +210,7 @@ const WelcomeBanner = () => {
   );
 };
 
-const QuickActions = () => {
+const QuickActions = ({ totalConsultations, totalDuration }: { totalConsultations: number; totalDuration: string }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 xl:gap-6">
       <div className="bg-white rounded-xl p-3 lg:p-4 xl:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
@@ -217,7 +219,7 @@ const QuickActions = () => {
             <IconMessage className="h-4 w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">{totalConsultations}</p>
             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Total Consultations</p>
           </div>
         </div>
@@ -228,7 +230,7 @@ const QuickActions = () => {
             <IconClock className="h-4 w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">0h 0m</p>
+            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">{totalDuration}</p>
             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Total Time</p>
           </div>
         </div>
@@ -238,18 +240,73 @@ const QuickActions = () => {
 };
 
 const Workspace = () => {
-  const consultations: Consultation[] = [];
+  const { user } = useUser();
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchConsultations = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/consultations');
+        if (response.ok) {
+          const data = await response.json();
+          const transformedData: Consultation[] = (data.consultations || []).map((consult: any) => ({
+            id: consult.id?.toString() || consult.sessionId,
+            sessionId: consult.sessionId,
+            doctor: consult.report?.agent || consult.selectedDoctor?.specialist || "AI Doctor",
+            specialty: consult.selectedDoctor?.specialist || "General Medicine",
+            timestamp: consult.createdOn || consult.report?.timestamp || new Date().toISOString(),
+            chiefComplaint: consult.report?.chiefComplaint || consult.notes || "No details available",
+            consultationDuration: consult.consultationDuration || 0, // Use actual duration
+          }));
+          setConsultations(transformedData);
+        }
+      } catch (error) {
+        console.error('Error fetching consultations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConsultations();
+  }, [user]);
+
+  // Calculate stats using ACTUAL consultation durations
+  const totalConsultations = consultations.length;
+  const totalDurationMinutes = consultations.reduce((total, consult) => {
+    // Use actual consultation duration in seconds, convert to minutes
+    return total + Math.round((consult.consultationDuration || 0) / 60);
+  }, 0);
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
 
   return (
-     <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto">
       <div className="max-w-7xl w-full mx-auto p-3 lg:p-4 xl:p-6 flex flex-col gap-4 lg:gap-6 xl:gap-8">
         <WelcomeBanner />
         <AddNewSessionDialog />
-        <QuickActions />
-        <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:gap-8">
-          <ConsultationHistory consultations={consultations} />
-          <DoctorAgentsList doctors={AIDoctorAgents} />
-        </div>
+        
+        <QuickActions 
+          totalConsultations={totalConsultations}
+          totalDuration={formatDuration(totalDurationMinutes)}
+        />
+
+        <ConsultationHistory 
+          consultations={consultations} 
+          isLoading={isLoading} 
+        />
+
+        <DoctorAgentsList doctors={AIDoctorAgents} />
       </div>
     </div>
   );
@@ -267,6 +324,7 @@ const Logo = ({ isOpen }: { isOpen: boolean }) => {
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
           className="font-medium whitespace-pre text-sm lg:text-base"
         >
           Docuvoice

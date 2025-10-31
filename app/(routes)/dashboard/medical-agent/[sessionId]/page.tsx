@@ -1,9 +1,10 @@
+// app/(routes)/voice-agent/[sessionId]/page.tsx
 "use client"
 
 import React, { useEffect, useState, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import axios from 'axios'
-import { DoctorAgent } from '../../components/DoctorAgentsList'
+import { DoctorAgent } from '@/app/(routes)/dashboard/components/DoctorAgentsList'
 import { Bot, MessageCircle, PhoneOff, PhoneCall, Loader2, UserCircle2, MicOff } from 'lucide-react'
 import { Navbar } from '@/app/_components/Navbar'
 import Image from 'next/image'
@@ -18,6 +19,9 @@ type SessionDetail = {
     createdOn: string,
     voiceId: string,
     agentPrompt: string,
+    consultationDuration?: number,
+    callStartedAt?: string,
+    callEndedAt?: string,
 }
 
 type Message = {
@@ -29,16 +33,19 @@ type Message = {
 }
 
 function MedicalVoiceAgent() {
-    const { sessionId } = useParams();
+    const params = useParams();
+    const sessionId = params.sessionId as string;
     const [sessionDetails, setSessionDetails] = useState<SessionDetail | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
+    const [isLoading, setLoading] = useState(false); 
     const [callTimer, setCallTimer] = useState(0);
     const [messages, setMessages] = useState<Message[]>([]);
     const [vapi, setVapi] = useState<any>(null);
     const [callError, setCallError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,6 +72,7 @@ function MedicalVoiceAgent() {
                 setIsConnected(true);
                 setIsConnecting(false);
                 setCallError(null);
+                updateCallStartTime();
             });
 
             vapiInstance.on('call-end', () => {
@@ -124,6 +132,34 @@ function MedicalVoiceAgent() {
         }
     }, []);
 
+    const updateCallStartTime = async () => {
+        if (!sessionId) return;
+        
+        try {
+            await axios.put('/api/session-chat', {
+                sessionId: sessionId,
+                callStartedAt: new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Failed to update call start time:', error);
+        }
+    }
+
+    const updateConsultationDuration = async (durationInSeconds: number) => {
+        if (!sessionId) return;
+        
+        try {
+            await axios.put('/api/session-chat', {
+                sessionId: sessionId,
+                consultationDuration: durationInSeconds,
+                callEndedAt: new Date().toISOString(),
+            });
+            console.log('Consultation duration updated:', durationInSeconds, 'seconds');
+        } catch (error) {
+            console.error('Failed to update consultation duration:', error);
+        }
+    }
+
     const StartCall = async () => {
         if (!vapi) {
             setCallError("Call service is not available. Please check the configuration.");
@@ -176,14 +212,27 @@ function MedicalVoiceAgent() {
         }
     }
 
-    const EndCall = () => {
+    const EndCall = async () => {
+        setLoading(true);
+        
+        // Calculate consultation duration
+        const durationInSeconds = callTimer;
+        
         if (!vapi) return;
         try {
             vapi.stop();
             setMessages(prev => prev.map(msg => !msg.isComplete ? { ...msg, isComplete: true } : msg));
+            
+            // Update consultation duration in database
+            await updateConsultationDuration(durationInSeconds);
+            
+            // Generate report
+            const result = await GenerateReport();
         } catch (error) {
             console.error('Failed to end call:', error);
         }
+        setLoading(false);
+        router.replace('/dashboard');
     }
 
     useEffect(() => {
@@ -211,6 +260,27 @@ function MedicalVoiceAgent() {
             setSessionDetails(result.data);
         } catch (error) {
             console.error('Failed to fetch session details:', error);
+        }
+    }
+
+    const GenerateReport = async () => {
+        try {
+            setLoading(true);
+            const result = await axios.post('/api/medical-report', {
+                messages: messages,
+                sessionDetails: sessionDetails,
+                sessionId: sessionDetails?.sessionId,
+            });
+            console.log('Report generated successfully:', result.data);
+            return result.data;
+        } catch (error: any) {
+            console.error('Failed to generate report:', error);
+            if (error.response) {
+                console.error('Server responded with:', error.response.data);
+            }
+            throw error;
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -345,8 +415,8 @@ function MedicalVoiceAgent() {
                                                     </div>
                                                 )}
                                                 <div className={`max-w-xs sm:max-w-md ${message.role === 'user'
-                                                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl rounded-tr-none'
-                                                        : 'bg-white dark:bg-neutral-800 rounded-2xl rounded-tl-none'
+                                                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl rounded-tr-none'
+                                                    : 'bg-white dark:bg-neutral-800 rounded-2xl rounded-tl-none'
                                                     } px-4 py-3 shadow-lg border border-gray-100 dark:border-neutral-700`}>
                                                     <p className={`whitespace-normal break-words ${message.role === 'assistant' ? 'text-gray-700 dark:text-gray-300' : 'text-white'}`}>
                                                         {message.content}
@@ -372,25 +442,25 @@ function MedicalVoiceAgent() {
                         <div className="w-full max-w-md space-y-2">
                             <button
                                 onClick={isConnected ? EndCall : StartCall}
-                                disabled={isConnecting || !!callError}
+                                disabled={isConnecting || !!callError || isLoading}
                                 className={`group relative w-full py-4 px-6 rounded-2xl font-bold text-white transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed ${isConnected
                                     ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
-                                    : isConnecting
+                                    : isConnecting || isLoading
                                         ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
                                         : !!callError
                                             ? 'bg-gradient-to-r from-gray-400 to-gray-500'
                                             : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
                                     }`}
                             >
-                                {!isConnecting && (
+                                {!isConnecting && !isLoading && (
                                     <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                                 )}
 
                                 <span className="relative flex items-center justify-center space-x-2">
-                                    {isConnecting ? (
+                                    {isConnecting || isLoading ? (
                                         <>
                                             <Loader2 className="h-5 w-5 animate-spin" />
-                                            <span>Connecting...</span>
+                                            <span>{isLoading ? 'Generating Report...' : 'Connecting...'}</span>
                                         </>
                                     ) : isConnected ? (
                                         <>
@@ -415,12 +485,12 @@ function MedicalVoiceAgent() {
 
                             {!callError && (
                                 <p className={`text-xs text-center px-4 
-                                    ${isConnecting ? 'text-yellow-600 dark:text-yellow-400'
+                                    ${isConnecting || isLoading ? 'text-yellow-600 dark:text-yellow-400'
                                         : isConnected ? 'text-green-600 dark:text-green-400'
                                             : 'text-gray-500 dark:text-gray-400'
                                     }
                                     `}>
-                                    {isConnecting ? 'Establishing connection with AI assistant...'
+                                    {isLoading ? 'Please wait while your medical report is generated.' : isConnecting ? 'Establishing connection with AI assistant...'
                                         : isConnected ? 'AI session active. Speak naturally with your medical assistant.'
                                             : 'Connect with your AI medical assistant for voice consultation'}
                                 </p>
