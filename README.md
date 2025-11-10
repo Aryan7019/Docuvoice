@@ -27,8 +27,8 @@ Docuvoice is a web application that acts as an AI-powered medical voice assistan
 
 * **Framework:** [Next.js](https://nextjs.org/)
 * **Language:** [TypeScript](https://www.typescriptlang.org/)
-* **AI:** (You can specify the AI/LLM API you used here, e.g., OpenAI, Gemini, etc.)
-* **Styling:** (You can specify, e.g., Tailwind CSS, Shadcn/ui, etc.)
+* **AI:** Gemini and Vapi
+* **Styling:** Shadcn and tailwind CSS
 * **Deployment:** [Vercel](https://vercel.com/)
 
 ## 🚀 Getting Started
