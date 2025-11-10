@@ -20,7 +20,7 @@ export default function Home() {
       </div>
       <div className="px-4 py-40 md:py-40">
         <h1 className="relative z-10 mx-auto max-w-4xl text-center text-4xl font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
-          {"🧑🏻‍⚕️Spend Less Time on Hold, More Time on "
+          {"Spend Less Time on Hold, More Time on "
             .split(" ")
             .map((word, index) => (
               <motion.span
@@ -54,7 +54,7 @@ export default function Home() {
           }}
           className="relative z-10 mx-auto max-w-xl py-4 text-center text-md md:text-lg font-normal text-neutral-600 dark:text-neutral-400"
         >
-          Provide 24/7 intelligent medical support using conversational AI. Triage symptoms, book appointments, and deliver empathetic care with voice-first automation.
+          Connect with AI-powered medical specialists instantly. Get personalized health advice, symptom analysis, and treatment recommendations 24/7.
         </motion.p>
         <Link href="/sign-in">
         <motion.div
@@ -90,14 +90,44 @@ export default function Home() {
           }}
           className="relative z-10 mt-20 rounded-3xl border border-neutral-200 bg-neutral-100 p-4 shadow-md dark:border-neutral-800 dark:bg-neutral-900"
         >
-          <div className="w-full overflow-hidden rounded-xl border border-gray-300 dark:border-gray-700">
-            <img
-              src="https://assets.aceternity.com/pro/aceternity-landing.webp"
-              alt="Landing page preview"
-              className="aspect-[16/9] h-auto w-full object-cover"
-              height={1000}
-              width={1000}
-            />
+          <div className="w-full overflow-hidden rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-neutral-900">
+            <div className="aspect-[16/9] h-auto w-full p-6">
+              {/* Dashboard Preview Mockup */}
+              <div className="h-full flex flex-col gap-4">
+                {/* Header */}
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-xl">🩺</span>
+                  </div>
+                  <div>
+                    <div className="h-3 w-32 bg-white/80 rounded"></div>
+                    <div className="h-2 w-48 bg-white/60 rounded mt-1"></div>
+                  </div>
+                </div>
+                
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-gray-100 dark:bg-neutral-800 rounded-xl">
+                    <div className="h-2 w-20 bg-gray-300 dark:bg-neutral-700 rounded mb-2"></div>
+                    <div className="h-6 w-12 bg-gray-400 dark:bg-neutral-600 rounded"></div>
+                  </div>
+                  <div className="p-4 bg-gray-100 dark:bg-neutral-800 rounded-xl">
+                    <div className="h-2 w-16 bg-gray-300 dark:bg-neutral-700 rounded mb-2"></div>
+                    <div className="h-6 w-16 bg-gray-400 dark:bg-neutral-600 rounded"></div>
+                  </div>
+                </div>
+                
+                {/* Doctor Cards Grid */}
+                <div className="grid grid-cols-4 gap-2 flex-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-gray-100 dark:bg-neutral-800 rounded-lg p-2">
+                      <div className="w-full aspect-square bg-gray-300 dark:bg-neutral-700 rounded-lg mb-2"></div>
+                      <div className="h-2 w-full bg-gray-300 dark:bg-neutral-700 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>

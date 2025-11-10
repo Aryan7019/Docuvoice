@@ -9,13 +9,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { IconMicrophone, IconVideo, IconPlus, IconCaretRightFilled } from "@tabler/icons-react"
+import { IconMicrophone, IconVideo, IconPlus, IconCaretRightFilled, IconCrown, IconSparkles } from "@tabler/icons-react"
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { DoctorAgent } from './DoctorAgentsList'
 import { Loader2 } from 'lucide-react'
 import { CompactDoctorCard, useSelectedDoctor } from './selectedDoctorCard'
 import { useRouter } from 'next/navigation'
+import { hasFakeSubscription } from '@/lib/subscription-client'
 
 function AddNewSessionDialog() {
   const [open, setOpen] = useState(false);
@@ -23,7 +24,9 @@ function AddNewSessionDialog() {
   const [loading, setLoading] = useState<boolean>(false);
   const [suggestedDoctors, setSuggestedDoctors] = useState<DoctorAgent[]>();
   const { selectedDoctor, setSelectedDoctor } = useSelectedDoctor();
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const router = useRouter();
+  const hasFakeSubscriptionEnabled = hasFakeSubscription();
 
   const onClickNext = async () => {
     setLoading(true);
@@ -59,6 +62,13 @@ function AddNewSessionDialog() {
   const handleStartConsultation = async () => {
   if (!selectedDoctor) {
     console.error("No doctor selected.");
+    return;
+  }
+
+  // Check if subscription is required and user doesn't have fake subscription
+  if (selectedDoctor.subscriptionRequired && !hasFakeSubscriptionEnabled) {
+    // Show upgrade dialog
+    setShowUpgradeDialog(true);
     return;
   }
 
@@ -134,21 +144,27 @@ function AddNewSessionDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 md:p-6 shadow-lg cursor-pointer w-full hover:shadow-xl transition-shadow">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 md:p-10 shadow-lg cursor-pointer w-full hover:shadow-xl transition-shadow">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-full mb-3 md:mb-4">
-              <IconMicrophone className="h-6 w-6 md:h-8 md:w-8 text-white" />
+            {/* Icon */}
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl mb-6">
+              <IconPlus className="h-10 w-10 text-white" />
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-              Start Instant Consultation
+            
+            {/* Content */}
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Get AI Doctor Recommendation
             </h2>
-            <p className="text-blue-100 text-sm md:text-base mb-4 md:mb-6">
-              Connect with a doctor in minutes. 24/7 availability.
+            <p className="text-blue-50 text-base md:text-lg mb-8 max-w-2xl mx-auto">
+              Describe your symptoms and we'll recommend the best specialist for your condition
             </p>
-            <div className="inline-flex bg-white text-blue-600 px-6 py-2 md:px-8 md:py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors items-center justify-center gap-2 text-sm md:text-base">
-              <IconVideo className="h-4 w-4 md:h-5 md:w-5" />
-              Start Voice Consultation
-            </div>
+            
+            {/* Big Button */}
+            <button className="inline-flex items-center gap-3 px-10 py-5 bg-white text-blue-600 hover:bg-blue-50 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
+              <IconMicrophone className="h-6 w-6" />
+              <span>Start Consultation</span>
+              <IconCaretRightFilled className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </DialogTrigger>
@@ -261,6 +277,106 @@ function AddNewSessionDialog() {
           </div>
         )}
       </DialogContent>
+
+      {/* Upgrade Dialog */}
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <div className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg">
+                <IconCrown className="h-5 w-5 text-white" />
+              </div>
+              Premium Specialist Required
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              You're currently on the <span className="font-semibold text-gray-900 dark:text-white">Free Plan</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Selected Doctor Info */}
+            {selectedDoctor && (
+              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-300 dark:border-blue-700 flex-shrink-0">
+                  <img
+                    src={selectedDoctor.image}
+                    alt={selectedDoctor.specialist}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    {selectedDoctor.specialist}
+                    <IconCrown className="h-4 w-4 text-amber-500" />
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedDoctor.description}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Message */}
+            <div className="space-y-3">
+              <p className="text-gray-700 dark:text-gray-300">
+                Access to <span className="font-semibold">{selectedDoctor?.specialist}</span> requires a premium subscription.
+              </p>
+              
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <h5 className="font-semibold text-amber-900 dark:text-amber-400 mb-2 flex items-center gap-2">
+                  <IconSparkles className="h-4 w-4" />
+                  Upgrade to Premium
+                </h5>
+                <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>Access to all 9 premium specialists</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>Unlimited voice consultations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>Detailed medical reports</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>24/7 availability</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUpgradeDialog(false);
+                setOpen(false);
+                resetDialog();
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowUpgradeDialog(false);
+                setOpen(false);
+                resetDialog();
+                router.push('/pricing');
+              }}
+              className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+            >
+              <IconSparkles className="h-4 w-4 mr-2" />
+              Upgrade Now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

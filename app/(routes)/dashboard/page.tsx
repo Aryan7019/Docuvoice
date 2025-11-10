@@ -13,6 +13,7 @@ import {
   IconUser,
   IconCurrencyDollar,
   IconCalendar,
+  IconStethoscope,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -190,20 +191,18 @@ const WelcomeBanner = () => {
   const { user } = useUser();
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-4 lg:p-6 xl:p-8 text-white">
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-2 truncate">
+    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-200 dark:border-neutral-700">
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 lg:w-16 lg:h-16 bg-blue-500 rounded-xl flex items-center justify-center shadow-sm">
+          <IconStethoscope className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">
             Welcome back, {user?.firstName || 'User'}! 👋
           </h1>
-          <p className="text-blue-100 text-xs sm:text-sm lg:text-base truncate">
-            How are you feeling today? Our AI doctors are ready to help.
+          <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-base">
+            Your AI health companion is ready to help you today
           </p>
-        </div>
-        <div className="hidden sm:flex ml-4">
-          <div className="w-12 h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <IconMicrophone className="h-5 w-5 lg:h-6 lg:w-6 xl:h-7 xl:w-7" />
-          </div>
         </div>
       </div>
     </div>
@@ -212,26 +211,29 @@ const WelcomeBanner = () => {
 
 const QuickActions = ({ totalConsultations, totalDuration }: { totalConsultations: number; totalDuration: string }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 xl:gap-6">
-      <div className="bg-white rounded-xl p-3 lg:p-4 xl:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-900/30">
-            <IconMessage className="h-4 w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-blue-600 dark:text-blue-400" />
-          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+      {/* Total Consultations Card */}
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-neutral-700 hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">{totalConsultations}</p>
-            <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Total Consultations</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Total Consultations</p>
+            <p className="text-4xl font-bold text-gray-900 dark:text-white">{totalConsultations}</p>
+          </div>
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+            <IconMessage className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-xl p-3 lg:p-4 xl:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-100 rounded-lg dark:bg-green-900/30">
-            <IconClock className="h-4 w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-green-600 dark:text-green-400" />
-          </div>
+
+      {/* Total Time Card */}
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-neutral-700 hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">{totalDuration}</p>
-            <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400">Total Time</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Total Time</p>
+            <p className="text-4xl font-bold text-gray-900 dark:text-white">{totalDuration}</p>
+          </div>
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+            <IconClock className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
         </div>
       </div>
