@@ -87,6 +87,4 @@ Distributed under the MIT License. See `LICENSE` file for more information. (Not
 
 ## 📬 Contact
 
-Aryan - [@YourTwitterHandle](https://twitter.com/YourTwitterHandle) - your.email@example.com
-
 Project Link: [https://github.com/Aryan7019/Docuvoice](https://github.com/Aryan7019/Docuvoice)
