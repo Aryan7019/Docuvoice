@@ -44,7 +44,17 @@ type Message = {
 }
 
 export async function POST(req: NextRequest) {
-  const { messages, sessionDetails, sessionId } = await req.json();
+  let messages, sessionDetails, sessionId;
+  
+  try {
+    const body = await req.json();
+    messages = body.messages;
+    sessionDetails = body.sessionDetails;
+    sessionId = body.sessionId;
+  } catch (error) {
+    console.error('Failed to parse request body:', error);
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
   // --- 1. Input Validation ---
   if (!messages || !Array.isArray(messages) || messages.length === 0) {

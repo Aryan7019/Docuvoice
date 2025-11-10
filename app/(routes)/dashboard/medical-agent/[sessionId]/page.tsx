@@ -173,10 +173,9 @@ function MedicalVoiceAgent() {
         }
 
         const VapiAgentConfig = {
-            name: 'AI Medical Assistant',
-            firstMessage: 'Hello! How can I assist you with your health concerns today?',
             transcriber: {
                 provider: 'deepgram', 
+                model: 'nova-2',
                 language: 'en-US',
             },
             voice: {
@@ -185,29 +184,32 @@ function MedicalVoiceAgent() {
             },
             model: {
                 provider: 'openai',
-                model: 'gpt-4o', 
+                model: 'gpt-4', 
                 messages: [
                     {
                         role: 'system',
                         content: sessionDetails.selectedDoctor.agentPrompt,
                     }
                 ]
-            }
+            },
+            firstMessage: `Hello! I'm your ${sessionDetails.selectedDoctor.specialist}. How can I assist you with your health concerns today?`,
         }
 
         try {
             setIsConnecting(true);
             setCallError(null);
             setMessages([]);
+            console.log('Starting VAPI call with config:', JSON.stringify(VapiAgentConfig, null, 2));
             await vapi.start(VapiAgentConfig);
         } catch (error: any) {
             console.error('Failed to start call:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
             setIsConnecting(false);
             const errorMessage = error.message || 'An unexpected error occurred.';
             if (errorMessage.includes('Permission denied')) {
                 setCallError('Microphone access denied. Please enable it in your browser to start the call.');
             } else {
-                setCallError(`Failed to start the call. Please try again.`);
+                setCallError(`Failed to start the call: ${errorMessage}. Check console for details.`);
             }
         }
     }
@@ -226,8 +228,12 @@ function MedicalVoiceAgent() {
             // Update consultation duration in database
             await updateConsultationDuration(durationInSeconds);
             
-            // Generate report
-            const result = await GenerateReport();
+            // Generate report only if there are messages
+            if (messages.length > 0) {
+                await GenerateReport();
+            } else {
+                console.log('No messages to generate report from');
+            }
         } catch (error) {
             console.error('Failed to end call:', error);
         }
