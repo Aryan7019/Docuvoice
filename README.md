@@ -2,9 +2,6 @@
 
 **Live Demo:** [**https://docuvoice.vercel.app/**](https://docuvoice.vercel.app/)
 
-![Docuvoice Homepage](https://user-images.githubusercontent.com/screenshots/docuvoice-demo.png) 
-*(Suggestion: Add a screenshot of your project to the repository and replace the URL above)*
-
 **Spend Less Time on Hold, More Time on Health.**
 
 Docuvoice is a web application that acts as an AI-powered medical voice assistant. It allows users to have natural voice conversations with various AI medical specialists to get instant health advice, symptom analysis, and treatment recommendations 24/7.
