@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { IconMicrophone, IconCrown, IconSparkles, IconLock } from "@tabler/icons-react";
-import { hasFakeSubscription } from "@/lib/subscription-client";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,8 @@ export type DoctorAgent = {
 
 export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
   const router = useRouter();
-  const hasFakeSubscriptionEnabled = hasFakeSubscription();
+  const { has } = useAuth();
+  const isPro = has ? has({ plan: 'pro' }) : false;
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -96,7 +97,7 @@ export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
           </p>
           
           {/* Show different button based on subscription status */}
-          {doctor.subscriptionRequired && !hasFakeSubscriptionEnabled ? (
+          {doctor.subscriptionRequired && !isPro ? (
             <button 
               onClick={() => setShowUpgradeDialog(true)}
               className="w-full bg-gray-400 text-white py-2 md:py-2.5 rounded-lg cursor-pointer hover:bg-gray-500 transition-colors flex items-center justify-center gap-1 md:gap-2 font-medium mt-auto text-xs md:text-sm"

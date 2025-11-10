@@ -30,7 +30,7 @@ export default function PricingPage() {
         </div>
 
         {/* Clerk Pricing Table */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto hide-switch-plan">
           <PricingTable />
         </div>
 

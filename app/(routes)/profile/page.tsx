@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { 
   IconUser, 
@@ -11,7 +11,8 @@ import {
   IconClock,
   IconFileReport,
   IconShieldCheck,
-  IconArrowLeft
+  IconArrowLeft,
+  IconSparkles
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import moment from "moment";
@@ -20,17 +21,20 @@ interface UserStats {
   totalConsultations: number;
   totalDuration: number;
   lastConsultation: string | null;
-  isPremium: boolean;
 }
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
+  const { has } = useAuth();
   const router = useRouter();
+  
+  // Get pro status immediately from client-side
+  const isPro = has ? has({ plan: 'pro' }) : false;
+  
   const [stats, setStats] = useState<UserStats>({
     totalConsultations: 0,
     totalDuration: 0,
-    lastConsultation: null,
-    isPremium: false
+    lastConsultation: null
   });
   const [loading, setLoading] = useState(true);
 
@@ -55,8 +59,7 @@ export default function ProfilePage() {
           setStats({
             totalConsultations: consultations.length,
             totalDuration,
-            lastConsultation,
-            isPremium: process.env.NEXT_PUBLIC_ENABLE_FAKE_SUBSCRIPTION === 'true'
+            lastConsultation
           });
         }
       } catch (error) {
@@ -106,7 +109,7 @@ export default function ProfilePage() {
             My Profile
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage your account information and view your consultation history
+            Manage your account and view your consultation history
           </p>
         </div>
 
@@ -114,7 +117,7 @@ export default function ProfilePage() {
           {/* Left Column - Profile Info */}
           <div className="lg:col-span-1 space-y-6">
             {/* Profile Card */}
-            <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+            <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-700 p-6">
               <div className="flex flex-col items-center">
                 {/* Avatar */}
                 <div className="relative mb-4">
@@ -123,7 +126,7 @@ export default function ProfilePage() {
                     alt={user.fullName || "User"}
                     className="w-24 h-24 rounded-full border-4 border-blue-500 shadow-lg"
                   />
-                  {stats.isPremium && (
+                  {isPro && (
                     <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full p-2 shadow-lg">
                       <IconCrown className="h-5 w-5 text-white" />
                     </div>
@@ -137,11 +140,11 @@ export default function ProfilePage() {
 
                 {/* Plan Badge */}
                 <div className={`px-4 py-1.5 rounded-full text-sm font-medium mb-4 ${
-                  stats.isPremium 
+                  isPro 
                     ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 dark:from-amber-900/30 dark:to-amber-800/30 dark:text-amber-400'
                     : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
                 }`}>
-                  {stats.isPremium ? '👑 Premium Member' : '🆓 Free Plan'}
+                  {isPro ? '👑 Pro Member' : '🆓 Free Plan'}
                 </div>
 
                 {/* User Info */}
@@ -168,17 +171,44 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Quick Actions */}
-            {!stats.isPremium && (
+            {/* Pro Benefits or Upgrade Card */}
+            {isPro ? (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl shadow-sm border border-amber-200 dark:border-amber-800 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <IconSparkles className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  <h3 className="font-semibold text-amber-900 dark:text-amber-400">
+                    Pro Benefits
+                  </h3>
+                </div>
+                <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>Access to all 10 specialists</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>Unlimited consultations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>Detailed medical reports</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 mt-0.5">✓</span>
+                    <span>24/7 availability</span>
+                  </li>
+                </ul>
+              </div>
+            ) : (
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl shadow-sm border border-amber-200 dark:border-amber-800 p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <IconCrown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                   <h3 className="font-semibold text-amber-900 dark:text-amber-400">
-                    Upgrade to Premium
+                    Upgrade to Pro
                   </h3>
                 </div>
                 <p className="text-sm text-amber-800 dark:text-amber-300 mb-4">
-                  Get access to all 9 premium specialists and unlimited consultations
+                  Get access to all 10 specialists and unlimited consultations
                 </p>
                 <button
                   onClick={() => router.push('/pricing')}
@@ -264,8 +294,11 @@ export default function ProfilePage() {
 
                 <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-neutral-700">
                   <span className="text-gray-600 dark:text-gray-400">Account Type</span>
-                  <span className={`font-medium ${stats.isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
-                    {stats.isPremium ? 'Premium' : 'Free'}
+                  <span className={`font-medium flex items-center gap-2 ${
+                    isPro ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'
+                  }`}>
+                    {isPro && <IconCrown className="h-4 w-4" />}
+                    {isPro ? 'Pro' : 'Free'}
                   </span>
                 </div>
 
@@ -307,11 +340,11 @@ export default function ProfilePage() {
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Available Specialists</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {stats.isPremium ? 'All specialists unlocked' : 'General Physician only'}
+                      {isPro ? 'All specialists unlocked' : 'General Physician only'}
                     </p>
                   </div>
                   <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {stats.isPremium ? '10' : '1'}
+                    {isPro ? '10' : '1'}
                   </span>
                 </div>
               </div>

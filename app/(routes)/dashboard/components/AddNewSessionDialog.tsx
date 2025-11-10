@@ -9,14 +9,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { IconMicrophone, IconVideo, IconPlus, IconCaretRightFilled, IconCrown, IconSparkles } from "@tabler/icons-react"
+import { IconMicrophone, IconPlus, IconCaretRightFilled, IconCrown, IconSparkles } from "@tabler/icons-react"
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { DoctorAgent } from './DoctorAgentsList'
 import { Loader2 } from 'lucide-react'
 import { CompactDoctorCard, useSelectedDoctor } from './selectedDoctorCard'
 import { useRouter } from 'next/navigation'
-import { hasFakeSubscription } from '@/lib/subscription-client'
+import { useAuth } from '@clerk/nextjs'
 
 function AddNewSessionDialog() {
   const [open, setOpen] = useState(false);
@@ -26,7 +26,8 @@ function AddNewSessionDialog() {
   const { selectedDoctor, setSelectedDoctor } = useSelectedDoctor();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const router = useRouter();
-  const hasFakeSubscriptionEnabled = hasFakeSubscription();
+  const { has } = useAuth();
+  const isPro = has ? has({ plan: 'pro' }) : false;
 
   const onClickNext = async () => {
     setLoading(true);
@@ -65,8 +66,8 @@ function AddNewSessionDialog() {
     return;
   }
 
-  // Check if subscription is required and user doesn't have fake subscription
-  if (selectedDoctor.subscriptionRequired && !hasFakeSubscriptionEnabled) {
+  // Check if subscription is required and user doesn't have subscription
+  if (selectedDoctor.subscriptionRequired && !isPro) {
     // Show upgrade dialog
     setShowUpgradeDialog(true);
     return;
