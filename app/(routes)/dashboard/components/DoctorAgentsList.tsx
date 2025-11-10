@@ -29,6 +29,9 @@ export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
   const isPro = has ? has({ plan: 'pro' }) : false;
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Debug log
+  console.log(`Doctor: ${doctor.specialist}, Requires Sub: ${doctor.subscriptionRequired}, User is Pro: ${isPro}`);
 
   const handleStartConsultation = async () => {
     setLoading(true);
