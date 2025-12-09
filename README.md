@@ -189,8 +189,6 @@ pnpm install
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials (see [Environment Variables](#-environment-variables))
-
 4. **Set up the database**
 ```bash
 # Generate database schema
