@@ -248,13 +248,6 @@ http://localhost:3000
 
 ---
 
-## 👨‍💻 Author
-
-**Aryan Mittal**
-- GitHub: [Aryan7019](https://github.com/Aryan7019)
-- LinkedIn: [Aryan Mittal](www.linkedin.com/in/aryan-mittal-2580ab338)
-
----
 
 ## 🙏 Acknowledgments
 
