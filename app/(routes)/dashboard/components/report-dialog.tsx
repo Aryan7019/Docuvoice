@@ -42,7 +42,7 @@ const ReportHeader = ({ doctorInfo, consultationDetails, report }: {
   consultationDetails: any, 
   report: any 
 }) => (
-  <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+  <div className="bg-gradient-to-r from-blue-50 to-indigo-100 dark:from-blue-950/50 dark:to-indigo-900/30 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="flex items-start gap-4">
         <div className="p-3 bg-blue-500 rounded-lg shadow-sm flex-shrink-0">
@@ -95,7 +95,7 @@ const InfoCard = ({
     green: "bg-green-500 text-white",
     yellow: "bg-yellow-500 text-white",
     indigo: "bg-indigo-500 text-white",
-    teal: "bg-teal-500 text-white"
+    purple: "bg-purple-500 text-white"
   };
 
   return (

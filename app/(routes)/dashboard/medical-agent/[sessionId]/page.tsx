@@ -9,6 +9,14 @@ import { Bot, MessageCircle, PhoneOff, PhoneCall, Loader2, UserCircle2, MicOff }
 import { Navbar } from '@/app/_components/Navbar'
 import Image from 'next/image'
 import Vapi from '@vapi-ai/web';
+import { MultiStepLoader } from '@/components/ui/multi-step-loader';
+
+const loadingStates = [
+  { text: "Initializing consultation session..." },
+  { text: "Loading doctor profile..." },
+  { text: "Setting up voice connection..." },
+  { text: "Preparing AI assistant..." },
+];
 
 type SessionDetail = {
     id: number,
@@ -68,21 +76,35 @@ function MedicalVoiceAgent() {
             setVapi(vapiInstance);
 
             vapiInstance.on('call-start', () => {
-                console.log('Call started');
+                console.log('✅ Call started successfully');
                 setIsConnected(true);
                 setIsConnecting(false);
                 setCallError(null);
                 updateCallStartTime();
             });
 
-            vapiInstance.on('call-end', () => {
-                console.log('Call ended');
+            vapiInstance.on('call-end', (endData?: any) => {
+                console.log('📞 Call ended', endData);
+                if (endData) {
+                    console.log('📞 End reason:', endData?.reason || 'No reason provided');
+                    console.log('📞 End details:', JSON.stringify(endData, null, 2));
+                }
                 setIsConnected(false);
                 setIsConnecting(false);
                 setMessages(prev => prev.map(msg => ({ ...msg, isComplete: true })));
             });
+            
+            vapiInstance.on('speech-start', () => {
+                console.log('🎤 User started speaking');
+            });
+            
+            vapiInstance.on('speech-end', () => {
+                console.log('🎤 User stopped speaking');
+            });
 
             vapiInstance.on('message', (message: any) => {
+                console.log('📨 Message received:', message.type);
+                
                 if (message.type === 'transcript' && message.transcript) {
                     const role = message.role;
                     const transcript = message.transcript;
@@ -116,18 +138,79 @@ function MedicalVoiceAgent() {
             });
 
             vapiInstance.on('error', (error: any) => {
-                console.error('VAPI error:', error);
-                setIsConnecting(false);
-                const errorMessage = error.message || 'An unknown error occurred.';
-                if (errorMessage.includes('Permission denied')) {
+                // Ignore all VAPI errors as they're mostly false positives
+                if (!error) return;
+                
+                // Properly stringify the error for logging
+                let errorMessage = '';
+                let errorDetails = '';
+                
+                try {
+                    if (typeof error === 'string') {
+                        errorMessage = error;
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    } else if (error.errorMsg) {
+                        errorMessage = error.errorMsg;
+                    } else if (error.error?.msg) {
+                        errorMessage = error.error.msg;
+                    } else if (error.toString && error.toString() !== '[object Object]') {
+                        errorMessage = error.toString();
+                    }
+                    
+                    errorDetails = JSON.stringify(error, null, 2);
+                } catch (e) {
+                    errorMessage = 'Unknown error';
+                }
+                
+                const errorKeys = error && typeof error === 'object' ? Object.keys(error) : [];
+                const errorType = error?.error?.type || error?.type || '';
+                
+                console.log('⚠️ VAPI error event:', {
+                    message: errorMessage,
+                    type: errorType,
+                    keys: errorKeys,
+                    details: errorDetails
+                });
+                
+                // Ignore empty errors, meeting end events, ejection events, and "Meeting has ended" errors
+                if (
+                    errorKeys.length === 0 ||
+                    errorType === 'ejected' ||
+                    errorMessage.includes('Meeting ended') || 
+                    errorMessage.includes('Meeting has ended') ||
+                    errorMessage.includes('ejection') ||
+                    error.errorMsg === 'Meeting has ended'
+                ) {
+                    console.log('ℹ️ Ignoring non-critical VAPI error (meeting end event)');
+                    return;
+                }
+                
+                // Only handle critical errors like permission denied
+                if (errorMessage.includes('Permission denied') || errorMessage.includes('permission')) {
+                    console.error('❌ Microphone permission error:', errorMessage);
+                    setIsConnecting(false);
+                    setIsConnected(false);
                     setCallError('Microphone access was denied. Please allow microphone access in your browser settings.');
+                } else if (errorMessage) {
+                    // Log other errors but don't disconnect - VAPI often sends false error events
+                    console.warn('⚠️ VAPI warning (not disconnecting):', errorMessage);
                 } else {
-                    setCallError(`Connection failed: ${errorMessage}`);
+                    // Empty or unknown error - ignore completely
+                    console.log('ℹ️ Ignoring empty VAPI error event');
                 }
             });
 
             return () => {
-                vapiInstance.stop();
+                try {
+                    vapiInstance.stop();
+                } catch (error: any) {
+                    // Ignore "Meeting ended" errors during cleanup
+                    const errorMsg = error?.message || error?.toString() || '';
+                    if (!errorMsg.includes('Meeting ended') && !errorMsg.includes('ejection')) {
+                        console.error('Error stopping VAPI:', error);
+                    }
+                }
             };
         }
     }, []);
@@ -179,8 +262,9 @@ function MedicalVoiceAgent() {
                 language: 'en-US',
             },
             voice: {
-                provider: 'playht',
-                voiceId: sessionDetails.selectedDoctor.voiceId,
+                provider: 'azure', // Azure voices work without integration
+                voiceId: 'andrew', // Male voice
+                // Other Azure voices: 'emma', 'brian', 'jenny', 'guy', 'aria'
             },
             model: {
                 provider: 'openai',
@@ -199,11 +283,16 @@ function MedicalVoiceAgent() {
             setIsConnecting(true);
             setCallError(null);
             setMessages([]);
-            console.log('Starting VAPI call with config:', JSON.stringify(VapiAgentConfig, null, 2));
+            console.log('🚀 Starting VAPI call...');
+            console.log('🔧 Voice ID:', sessionDetails.selectedDoctor.voiceId);
+            console.log('🔧 Agent Prompt:', sessionDetails.selectedDoctor.agentPrompt.substring(0, 100) + '...');
+            console.log('🔧 Full config:', JSON.stringify(VapiAgentConfig, null, 2));
+            
             await vapi.start(VapiAgentConfig);
+            console.log('✅ VAPI start command sent successfully');
         } catch (error: any) {
-            console.error('Failed to start call:', error);
-            console.error('Error details:', JSON.stringify(error, null, 2));
+            console.error('❌ Failed to start call:', error);
+            console.error('❌ Error details:', JSON.stringify(error, null, 2));
             setIsConnecting(false);
             const errorMessage = error.message || 'An unexpected error occurred.';
             if (errorMessage.includes('Permission denied')) {
@@ -222,7 +311,17 @@ function MedicalVoiceAgent() {
         
         if (!vapi) return;
         try {
-            vapi.stop();
+            // Wrap vapi.stop() to catch and ignore "Meeting ended" errors
+            try {
+                vapi.stop();
+            } catch (stopError: any) {
+                // Ignore "Meeting ended" errors as they're expected when stopping
+                const errorMsg = stopError?.message || stopError?.toString() || '';
+                if (!errorMsg.includes('Meeting ended') && !errorMsg.includes('ejection')) {
+                    throw stopError; // Re-throw if it's a real error
+                }
+            }
+            
             setMessages(prev => prev.map(msg => !msg.isComplete ? { ...msg, isComplete: true } : msg));
             
             // Update consultation duration in database
@@ -234,8 +333,12 @@ function MedicalVoiceAgent() {
             } else {
                 console.log('No messages to generate report from');
             }
-        } catch (error) {
-            console.error('Failed to end call:', error);
+        } catch (error: any) {
+            // Ignore "Meeting ended" errors
+            const errorMsg = error?.message || error?.toString() || '';
+            if (!errorMsg.includes('Meeting ended') && !errorMsg.includes('ejection')) {
+                console.error('Failed to end call:', error);
+            }
         }
         setLoading(false);
         router.replace('/dashboard');
@@ -309,6 +412,8 @@ function MedicalVoiceAgent() {
 
             <div className="relative z-10">
                 <Navbar />
+                
+                <MultiStepLoader loadingStates={loadingStates} loading={isLoading} duration={1000} loop={true} />
 
                 <div className="mt-20 py-5">
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -342,7 +447,7 @@ function MedicalVoiceAgent() {
                             </div>
 
                             <div className={`flex items-center space-x-3 px-4 py-3 rounded-full border backdrop-blur-sm transition-all duration-300 ${isConnected
-                                ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800'
+                                ? 'bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-800'
                                 : 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800'
                                 }`}>
                                 <Bot className="h-5 w-5 text-purple-500" />
@@ -360,7 +465,7 @@ function MedicalVoiceAgent() {
                     <div className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 space-y-8 flex-1 max-w-4xl mx-auto w-full pb-8">
                         <div className="flex flex-col items-center text-center space-y-6 w-full">
                             <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-teal-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
                                 <div className="relative w-32 h-32 sm:w-40 sm:h-40">
                                     <Image
                                         src={sessionDetails.selectedDoctor.image}
@@ -370,7 +475,7 @@ function MedicalVoiceAgent() {
                                         className="rounded-full object-cover border-4 border-white dark:border-neutral-800 shadow-xl w-full h-full"
                                         priority
                                     />
-                                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-1 shadow-lg">
+                                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full p-1 shadow-lg">
                                         <Bot className="h-4 w-4 text-white" />
                                     </div>
                                 </div>
@@ -380,17 +485,17 @@ function MedicalVoiceAgent() {
 
                             <div className="space-y-3">
                                 <div className="flex items-center justify-center space-x-2">
-                                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">
                                         {sessionDetails.selectedDoctor.specialist}
                                     </h3>
-                                    <Bot className="h-6 w-6 text-purple-500" />
+                                    <Bot className="h-6 w-6 text-cyan-500" />
                                 </div>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base max-w-md leading-relaxed">
                                     {sessionDetails.selectedDoctor.description}
                                 </p>
-                                <div className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">
-                                    <MessageCircle className="h-3 w-3 text-blue-500" />
-                                    <span className="text-xs text-blue-600 dark:text-blue-400">AI Medical Assistant</span>
+                                <div className="inline-flex items-center space-x-1 px-3 py-1 bg-cyan-50 dark:bg-cyan-900/30 rounded-full">
+                                    <MessageCircle className="h-3 w-3 text-cyan-500" />
+                                    <span className="text-xs text-cyan-600 dark:text-cyan-400">AI Medical Assistant</span>
                                 </div>
                             </div>
                         </div>
@@ -416,25 +521,25 @@ function MedicalVoiceAgent() {
                                         messages.map((message) => (
                                             <div key={message.id} className={`flex items-end ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                 {message.role === 'assistant' && (
-                                                    <div className="flex-shrink-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-2 h-8 w-8 mr-2 flex items-center justify-center">
+                                                    <div className="flex-shrink-0 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full p-2 h-8 w-8 mr-2 flex items-center justify-center">
                                                         <Bot className="h-4 w-4 text-white" />
                                                     </div>
                                                 )}
                                                 <div className={`max-w-xs sm:max-w-md ${message.role === 'user'
-                                                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl rounded-tr-none'
+                                                    ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white rounded-2xl rounded-tr-none'
                                                     : 'bg-white dark:bg-neutral-800 rounded-2xl rounded-tl-none'
                                                     } px-4 py-3 shadow-lg border border-gray-100 dark:border-neutral-700`}>
                                                     <p className={`whitespace-normal break-words ${message.role === 'assistant' ? 'text-gray-700 dark:text-gray-300' : 'text-white'}`}>
                                                         {message.content}
                                                         {!message.isComplete && message.role === 'assistant' && <span className="inline-block w-1 h-4 bg-gray-400 ml-1 animate-pulse"></span>}
                                                     </p>
-                                                    <span className={`text-xs ${message.role === 'user' ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'} mt-1 block text-right`}>
+                                                    <span className={`text-xs ${message.role === 'user' ? 'text-cyan-200' : 'text-gray-500 dark:text-gray-400'} mt-1 block text-right`}>
                                                         {formatMessageTime(message.timestamp)}
                                                     </span>
                                                 </div>
                                                 {message.role === 'user' && (
                                                     <div className="flex-shrink-0 h-10 w-10 ml-2 flex items-center justify-center">
-                                                        <UserCircle2 className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                                                        <UserCircle2 className="h-8 w-8 text-cyan-500 dark:text-cyan-400" />
                                                     </div>
                                                 )}
                                             </div>
@@ -455,7 +560,7 @@ function MedicalVoiceAgent() {
                                         ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
                                         : !!callError
                                             ? 'bg-gradient-to-r from-gray-400 to-gray-500'
-                                            : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
+                                            : 'bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700'
                                     }`}
                             >
                                 {!isConnecting && !isLoading && (

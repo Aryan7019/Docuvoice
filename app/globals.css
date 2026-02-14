@@ -147,3 +147,17 @@ h1, h2, h3, h4, h5, h6 {
 button, input, textarea, select {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Shimmer animation for navigation loader */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}

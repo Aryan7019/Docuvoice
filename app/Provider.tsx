@@ -26,9 +26,15 @@ export default function Provider({
    }, [user]);
 
   const CreateNewUser = async() => {
-      const result = await axios.post('/api/users');
-      console.log(result);
-      setUserDetail(result.data);
+      try {
+        const result = await axios.post('/api/users');
+        setUserDetail(result.data);
+      } catch (error) {
+        // Log user creation errors in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('User creation error:', error);
+        }
+      }
   }
 
   return (

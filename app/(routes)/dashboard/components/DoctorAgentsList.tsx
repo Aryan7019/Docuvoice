@@ -31,7 +31,7 @@ export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
   const [loading, setLoading] = useState(false);
   
   // Debug log
-  console.log(`Doctor: ${doctor.specialist}, Requires Sub: ${doctor.subscriptionRequired}, User is Pro: ${isPro}`);
+  // console.log(`Doctor: ${doctor.specialist}, Requires Sub: ${doctor.subscriptionRequired}, User is Pro: ${isPro}`);
 
   const handleStartConsultation = async () => {
     setLoading(true);
@@ -77,11 +77,20 @@ export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow dark:bg-neutral-900 dark:border-neutral-700 dark:hover:shadow-neutral-800 flex flex-col h-full overflow-hidden">
-        <div className="w-full h-40 sm:h-48 md:h-56 overflow-hidden">
+        <div className="w-full h-40 sm:h-48 md:h-56 overflow-hidden bg-gray-100 dark:bg-neutral-800">
           <img
             src={doctor.image}
             alt={doctor.specialist}
             className="w-full h-full object-cover object-top"
+            loading="eager"
+            onError={(e) => {
+              console.error(`Failed to load image for ${doctor.specialist}: ${doctor.image}`);
+              const target = e.currentTarget;
+              // Fallback to default image
+              if (target.src !== '/doctor1.png') {
+                target.src = '/doctor1.png';
+              }
+            }}
           />
         </div>
         <div className="flex flex-col flex-1 p-3 md:p-4">
@@ -112,7 +121,7 @@ export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
             <button 
               onClick={handleStartConsultation}
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 md:py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1 md:gap-2 font-medium mt-auto text-xs md:text-sm"
+              className="w-full bg-cyan-600 text-white py-2 md:py-2.5 rounded-lg hover:bg-cyan-700 disabled:bg-cyan-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1 md:gap-2 font-medium mt-auto text-xs md:text-sm"
             >
               {loading ? (
                 <>
@@ -151,11 +160,15 @@ export const AIDoctorCard = ({ doctor }: { doctor: DoctorAgent }) => {
           <div className="space-y-4 py-4">
             {/* Doctor Info */}
             <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-300 dark:border-blue-700 flex-shrink-0">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-300 dark:border-blue-700 flex-shrink-0 bg-gray-100 dark:bg-neutral-800">
                 <img
                   src={doctor.image}
                   alt={doctor.specialist}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = '/doctor1.png';
+                  }}
                 />
               </div>
               <div>

@@ -145,7 +145,7 @@ function AddNewSessionDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 md:p-10 shadow-lg cursor-pointer w-full hover:shadow-xl transition-shadow">
+        <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-2xl p-8 md:p-10 shadow-lg cursor-pointer w-full hover:shadow-xl transition-shadow">
           <div className="text-center">
             {/* Icon */}
             <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl mb-6">
@@ -156,12 +156,12 @@ function AddNewSessionDialog() {
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
               Get AI Doctor Recommendation
             </h2>
-            <p className="text-blue-50 text-base md:text-lg mb-8 max-w-2xl mx-auto">
+            <p className="text-cyan-50 text-base md:text-lg mb-8 max-w-2xl mx-auto">
               Describe your symptoms and we'll recommend the best specialist for your condition
             </p>
             
             {/* Big Button */}
-            <button className="inline-flex items-center gap-3 px-10 py-5 bg-white text-blue-600 hover:bg-blue-50 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
+            <button className="inline-flex items-center gap-3 px-10 py-5 bg-white text-cyan-600 hover:bg-cyan-50 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
               <IconMicrophone className="h-6 w-6" />
               <span>Start Consultation</span>
               <IconCaretRightFilled className="h-5 w-5" />
@@ -172,7 +172,7 @@ function AddNewSessionDialog() {
       <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <IconPlus className="h-5 w-5 text-blue-600" />
+            <IconPlus className="h-5 w-5 text-cyan-600" />
             Start New Consultation
           </DialogTitle>
 
@@ -186,7 +186,7 @@ function AddNewSessionDialog() {
                 Based on your notes, we suggest:
               </h4>
               {selectedDoctor && (
-                <p className="text-blue-600 dark:text-blue-400 mt-1">
+                <p className="text-cyan-600 dark:text-cyan-400 mt-1">
                   Selected: {selectedDoctor.specialist}
                 </p>
               )}
@@ -222,7 +222,7 @@ function AddNewSessionDialog() {
               </Button>
               <Button
                 type="button"
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm py-2"
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-sm py-2"
                 disabled={!note || note.trim().length === 0 || loading}
                 onClick={onClickNext}
               >
@@ -261,7 +261,7 @@ function AddNewSessionDialog() {
               </Button>
               <Button
                 type="button"
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm py-2"
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-sm py-2"
                 disabled={!selectedDoctor || loading}
                 onClick={handleStartConsultation}
               >

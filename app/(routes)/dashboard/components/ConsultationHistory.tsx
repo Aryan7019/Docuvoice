@@ -52,8 +52,8 @@ const EmptyState = () => {
   return (
     <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700 text-center">
       <div className="flex justify-center mb-4">
-        <div className="w-14 h-14 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900/30">
-          <IconCalendar className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
+        <div className="w-14 h-14 md:w-16 md:h-16 bg-cyan-100 rounded-full flex items-center justify-center dark:bg-cyan-900/30">
+          <IconCalendar className="h-6 w-6 md:h-8 md:w-8 text-cyan-600 dark:text-cyan-400" />
         </div>
       </div>
       <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
@@ -97,18 +97,18 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
   // MODIFIED: Handle null input
   const getReportData = (consultation: Consultation | null) => {
     if (!consultation || !consultation.report) {
-      console.log("No consultation or report data:", { consultation: !!consultation, report: !!consultation?.report });
       return null;
     }
     try {
       const parsed = typeof consultation.report === 'string'
         ? JSON.parse(consultation.report)
         : consultation.report;
-      console.log("Successfully parsed report data:", parsed);
       return parsed;
     } catch (error)
     {
-      console.error("Failed to parse report in getReportData:", error, "Raw report:", consultation.report);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Failed to parse report in getReportData:", error, "Raw report:", consultation.report);
+      }
       return null;
     }
   };
@@ -142,9 +142,6 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
   };
 
   const handleShowReport = (consultation: Consultation) => {
-    console.log("Showing report for consultation:", consultation);
-    console.log("Report data:", consultation.report);
-    console.log("Selected doctor:", consultation.selectedDoctor);
     setSelectedConsultation(consultation);
     setIsDialogOpen(true);
   };
@@ -171,7 +168,7 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
     return (
       <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
         <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4 md:mb-6 flex items-center gap-2">
-          <IconCalendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
+          <IconCalendar className="h-4 w-4 md:h-5 md:w-5 text-cyan-600" />
           Recent Consultations
         </h2>
         <LoadingSkeleton />
@@ -183,87 +180,109 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
     return <EmptyState />;
   }
 
+  // Helper to get doctor image
+  const getDoctorImage = (consultation: Consultation) => {
+    try {
+      const selectedDoctor = typeof consultation.selectedDoctor === 'string'
+        ? JSON.parse(consultation.selectedDoctor)
+        : consultation.selectedDoctor;
+      return selectedDoctor?.image || '/doctor1.png';
+    } catch (error) {
+      console.error('Error parsing doctor image:', error);
+      return '/doctor1.png';
+    }
+  };
+
   return (
     <>
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-            <IconCalendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <IconCalendar className="h-6 w-6 text-blue-600" />
             Consultation History
           </h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
             {consultations.length} session{consultations.length !== 1 ? 's' : ''}
           </span>
         </div>
 
-        {/* Table with reduced height - shows 3-4 rows at a time */}
-        <div className="rounded-md border">
-          <div className="max-h-[280px] overflow-y-auto">
-            <table className="w-full">
-              <thead className="sticky top-0 bg-white dark:bg-neutral-900 z-10 border-b">
-                <tr>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">Doctor</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">Chief Complaint</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">Severity</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">Time</th>
-                  <th className="text-right py-3 px-4 font-semibold text-sm">Report</th>
-                </tr>
-              </thead>
-              <tbody>
-                {consultations.map((consultation) => {
-                  const doctorInfo = getDoctorInfo(consultation);
-                  const chiefComplaint = getChiefComplaint(consultation);
-                  const severity = getSeverity(consultation);
+        {/* Horizontal Cards - 2 per row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {consultations.map((consultation) => {
+            const doctorInfo = getDoctorInfo(consultation);
+            const chiefComplaint = getChiefComplaint(consultation);
+            const severity = getSeverity(consultation);
+            const doctorImage = getDoctorImage(consultation);
 
-                  return (
-                    <tr key={consultation.id} className="border-b hover:bg-gray-50/50 dark:hover:bg-neutral-800/50">
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{doctorInfo.doctor}</span>
-                          <span className="text-xs text-gray-500">{doctorInfo.specialty}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="max-w-[200px]">
-                          <span className="text-sm line-clamp-2">{chiefComplaint}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {severity ? (
-                          <Badge className={`text-xs font-medium ${getSeverityColor(severity)}`}>
-                            {severity.charAt(0).toUpperCase() + severity.slice(1)}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-gray-400 italic">Not specified</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <IconClock className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-gray-700 dark:text-gray-300">
-                            {moment(consultation.createdOn).fromNow()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
-                            onClick={() => handleShowReport(consultation)}
-                          >
-                            <IconFileReport className="h-4 w-4" />
-                            Show
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+            return (
+              <div 
+                key={consultation.id} 
+                className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden hover:shadow-lg transition-all group"
+              >
+                <div className="flex">
+                  {/* Doctor Image - Left Side */}
+                  <div className="relative w-40 flex-shrink-0 bg-gray-100 dark:bg-neutral-800">
+                    <img 
+                      src={doctorImage} 
+                      alt={doctorInfo.doctor}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        console.error(`Failed to load doctor image: ${doctorImage}`);
+                        e.currentTarget.src = '/doctor1.png';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10"></div>
+                  </div>
+
+                  {/* Content - Right Side */}
+                  <div className="flex-1 p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
+                          {doctorInfo.doctor}
+                        </h3>
+                        <p className="text-sm text-cyan-600 dark:text-cyan-400">
+                          {doctorInfo.specialty}
+                        </p>
+                      </div>
+                      {severity && (
+                        <Badge className={`text-xs font-medium ${getSeverityColor(severity)}`}>
+                          {severity.charAt(0).toUpperCase() + severity.slice(1)}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="mb-4">
+                      <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                        Chief Complaint
+                      </h4>
+                      <p className="text-sm text-gray-900 dark:text-white line-clamp-2">
+                        {chiefComplaint}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                        <IconClock className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{moment(consultation.createdOn).fromNow()}</span>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 group-hover:bg-cyan-50 group-hover:text-cyan-600 group-hover:border-cyan-600 dark:group-hover:bg-cyan-900/20 dark:group-hover:text-cyan-400 transition-all"
+                        onClick={() => handleShowReport(consultation)}
+                      >
+                        <IconFileReport className="h-3.5 w-3.5" />
+                        View Report
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
