@@ -251,19 +251,58 @@ const AnalyticsCards = ({
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { has } = useAuth();
+  const { has, sessionClaims } = useAuth();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
-  const isPro = has ? has({ plan: 'pro' }) : false;
+  // Check pro status with proper subscription validation
+  useEffect(() => {
+    const checkProStatus = () => {
+      if (!has || !sessionClaims) {
+        setIsPro(false);
+        return;
+      }
+      
+      const hasPro = has({ plan: 'pro' });
+      
+      // Check subscription status from metadata
+      const metadata = (sessionClaims as any)?.publicMetadata;
+      const subscriptionStatus = metadata?.subscriptionStatus;
+      
+      // User is pro only if they have the plan AND subscription is active
+      const isActivePro = hasPro && (!subscriptionStatus || subscriptionStatus === 'active');
+      setIsPro(isActivePro);
+    };
+    
+    checkProStatus();
+    
+    // Recheck when user or session changes
+    if (user) {
+      checkProStatus();
+    }
+  }, [has, user, sessionClaims]);
 
   useEffect(() => {
     const fetchConsultations = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      
+      let loaderTimeout: NodeJS.Timeout | null = null;
       
       try {
-        setIsLoading(true);
+        // Don't show loader immediately - only after 300ms delay
+        loaderTimeout = setTimeout(() => setIsLoading(true), 300);
+        
         const response = await fetch('/api/consultations');
+        
+        // Clear timeout if fetch completes quickly
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+        }
+        
         if (response.ok) {
           const data = await response.json();
           const transformedData: Consultation[] = (data.consultations || []).map((consult: any) => ({
@@ -283,6 +322,9 @@ export default function DashboardPage() {
         }
       } catch (error) {
         console.error('Error fetching consultations:', error);
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -310,7 +352,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 flex flex-col">
       <Navbar />
       
-      <MultiStepLoader loadingStates={loadingStates} loading={isLoading} duration={1000} loop={true} />
+      {/* Only show loader if actually loading and taking time */}
+      {isLoading && <MultiStepLoader loadingStates={loadingStates} loading={isLoading} duration={800} loop={true} />}
       
       <div className="pt-20 pb-12 flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

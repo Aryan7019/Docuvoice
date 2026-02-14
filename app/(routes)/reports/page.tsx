@@ -17,15 +17,28 @@ const loadingStates = [
 export default function ReportsPage() {
   const { user } = useUser();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchConsultations = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      
+      let loaderTimeout: NodeJS.Timeout | null = null;
       
       try {
-        setIsLoading(true);
+        // Don't show loader immediately - only after 300ms delay
+        loaderTimeout = setTimeout(() => setIsLoading(true), 300);
+        
         const response = await fetch('/api/consultations');
+        
+        // Clear timeout if fetch completes quickly
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+        }
+        
         if (response.ok) {
           const data = await response.json();
           const transformedData: Consultation[] = (data.consultations || []).map((consult: any) => ({
@@ -45,6 +58,9 @@ export default function ReportsPage() {
         }
       } catch (error) {
         console.error('Error fetching consultations:', error);
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -57,7 +73,7 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 flex flex-col">
       <Navbar />
       
-      <MultiStepLoader loadingStates={loadingStates} loading={isLoading} duration={1000} loop={true} />
+      {isLoading && <MultiStepLoader loadingStates={loadingStates} loading={isLoading} duration={800} loop={true} />}
       
       <div className="pt-20 pb-12 flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full overflow-hidden">

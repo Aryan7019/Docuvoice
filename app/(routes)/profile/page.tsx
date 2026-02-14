@@ -44,12 +44,28 @@ export default function ProfilePage() {
     totalDuration: 0,
     lastConsultation: null
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (!isLoaded || !user) {
+        setLoading(false);
+        return;
+      }
+      
+      let loaderTimeout: NodeJS.Timeout | null = null;
+      
       try {
+        // Don't show loader immediately - only after 300ms delay
+        loaderTimeout = setTimeout(() => setLoading(true), 300);
+        
         const response = await fetch('/api/consultations');
+        
+        // Clear timeout if fetch completes quickly
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+        }
+        
         if (response.ok) {
           const data = await response.json();
           const consultations = data.consultations || [];
@@ -70,14 +86,15 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error('Error fetching stats:', error);
+        if (loaderTimeout) {
+          clearTimeout(loaderTimeout);
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (isLoaded && user) {
-      fetchStats();
-    }
+    fetchStats();
   }, [isLoaded, user]);
 
   if (!isLoaded || !user) {

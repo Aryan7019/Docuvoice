@@ -90,6 +90,7 @@ export const Navbar = () => {
                     <Link
                       key={link.href}
                       href={link.href}
+                      prefetch={true}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 ${
                         isActive(link.href)
                           ? 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400'
@@ -183,6 +184,7 @@ export const Navbar = () => {
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={true}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 ${
                       isActive(link.href)

@@ -15,13 +15,15 @@ export default function PricingPage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-20 flex-grow">
         {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors mb-8 font-medium"
-        >
-          <IconArrowLeft className="h-5 w-5" />
-          Back
-        </button>
+        <div className="flex items-center mb-8">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors font-medium focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 rounded-lg"
+          >
+            <IconArrowLeft className="h-5 w-5" />
+            Back
+          </button>
+        </div>
 
         {/* Header */}
         <div className="text-center mb-16">

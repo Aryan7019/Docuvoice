@@ -232,13 +232,13 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
                 key={consultation.id} 
                 className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden hover:shadow-md hover:scale-[1.02] transition-all group w-full"
               >
-                <div className="flex flex-row w-full">
-                  {/* Doctor Image - Larger and more prominent */}
-                  <div className="relative w-32 sm:w-48 md:w-56 h-full min-h-[180px] sm:min-h-[200px] flex-shrink-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950 dark:to-blue-950">
+                <div className="flex flex-row w-full h-full">
+                  {/* Doctor Image - Full height */}
+                  <div className="relative w-32 sm:w-48 md:w-56 flex-shrink-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950 dark:to-blue-950">
                     <img 
                       src={doctorImage} 
                       alt={doctorInfo.doctor}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover absolute inset-0"
                       loading="lazy"
                       onError={(e) => {
                         console.error(`Failed to load doctor image: ${doctorImage}`);

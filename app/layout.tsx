@@ -15,6 +15,11 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "DocuVoice - AI-Powered Healthcare",
   description: "Experience next-generation healthcare with AI-powered medical consultations. Get instant symptom analysis, personalized treatment plans, and connect with specialized virtual doctors anytime.",
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({

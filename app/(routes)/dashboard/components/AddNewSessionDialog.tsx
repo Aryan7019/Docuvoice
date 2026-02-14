@@ -25,9 +25,27 @@ function AddNewSessionDialog() {
   const [suggestedDoctors, setSuggestedDoctors] = useState<DoctorAgent[]>();
   const { selectedDoctor, setSelectedDoctor } = useSelectedDoctor();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [isPro, setIsPro] = useState(false);
   const router = useRouter();
-  const { has } = useAuth();
-  const isPro = has ? has({ plan: 'pro' }) : false;
+  const { has, sessionClaims } = useAuth();
+
+  // Check pro status with proper subscription validation
+  React.useEffect(() => {
+    if (!has || !sessionClaims) {
+      setIsPro(false);
+      return;
+    }
+    
+    const hasPro = has({ plan: 'pro' });
+    
+    // Check subscription status from metadata
+    const metadata = (sessionClaims as any)?.publicMetadata;
+    const subscriptionStatus = metadata?.subscriptionStatus;
+    
+    // User is pro only if they have the plan AND subscription is active
+    const isActivePro = hasPro && (!subscriptionStatus || subscriptionStatus === 'active');
+    setIsPro(isActivePro);
+  }, [has, sessionClaims]);
 
   const onClickNext = async () => {
     setLoading(true);
