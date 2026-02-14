@@ -69,6 +69,8 @@ const EmptyState = () => {
 const ConsultationHistory = ({ consultations = [], isLoading = false }: ConsultationHistoryProps) => {
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Helper function to parse doctor info
   // MODIFIED: Handle null input
@@ -151,6 +153,17 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
     setSelectedConsultation(null);
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(consultations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentConsultations = consultations.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // --- NEW LOGIC ---
   // Prepare props for the dialog based on the selected consultation
   const selectedReport = getReportData(selectedConsultation);
@@ -195,20 +208,20 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <IconCalendar className="h-6 w-6 text-blue-600" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <IconCalendar className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-600" />
             Consultation History
           </h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
+          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-2 sm:px-3 py-1 rounded-full">
             {consultations.length} session{consultations.length !== 1 ? 's' : ''}
           </span>
         </div>
 
-        {/* Horizontal Cards - 2 per row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {consultations.map((consultation) => {
+        {/* Horizontal Cards - 2 per row on desktop, 1 per row on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full">
+          {currentConsultations.map((consultation) => {
             const doctorInfo = getDoctorInfo(consultation);
             const chiefComplaint = getChiefComplaint(consultation);
             const severity = getSeverity(consultation);
@@ -217,11 +230,11 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
             return (
               <div 
                 key={consultation.id} 
-                className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden hover:shadow-lg transition-all group"
+                className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden hover:shadow-md hover:scale-[1.02] transition-all group w-full"
               >
-                <div className="flex">
-                  {/* Doctor Image - Left Side */}
-                  <div className="relative w-40 flex-shrink-0 bg-gray-100 dark:bg-neutral-800">
+                <div className="flex flex-row w-full">
+                  {/* Doctor Image - Larger and more prominent */}
+                  <div className="relative w-32 sm:w-48 md:w-56 h-full min-h-[180px] sm:min-h-[200px] flex-shrink-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950 dark:to-blue-950">
                     <img 
                       src={doctorImage} 
                       alt={doctorInfo.doctor}
@@ -232,50 +245,54 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
                         e.currentTarget.src = '/doctor1.png';
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
                   </div>
 
-                  {/* Content - Right Side */}
-                  <div className="flex-1 p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
+                  {/* Content Section */}
+                  <div className="flex-1 p-4 sm:p-5 md:p-6 min-w-0 flex flex-col">
+                    {/* Header with Doctor Info and Badge */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-base sm:text-lg md:text-xl text-gray-900 dark:text-white mb-1 truncate">
                           {doctorInfo.doctor}
                         </h3>
-                        <p className="text-sm text-cyan-600 dark:text-cyan-400">
+                        <p className="text-xs sm:text-sm text-cyan-600 dark:text-cyan-400 font-medium truncate">
                           {doctorInfo.specialty}
                         </p>
                       </div>
                       {severity && (
-                        <Badge className={`text-xs font-medium ${getSeverityColor(severity)}`}>
+                        <Badge className={`text-xs font-semibold flex-shrink-0 px-2 py-0.5 ${getSeverityColor(severity)}`}>
                           {severity.charAt(0).toUpperCase() + severity.slice(1)}
                         </Badge>
                       )}
                     </div>
 
-                    <div className="mb-4">
-                      <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                    {/* Chief Complaint */}
+                    <div className="flex-1 mb-3">
+                      <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                         Chief Complaint
                       </h4>
-                      <p className="text-sm text-gray-900 dark:text-white line-clamp-2">
+                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 line-clamp-2 leading-relaxed">
                         {chiefComplaint}
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                    {/* Footer with Time and Button */}
+                    <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-gray-100 dark:border-neutral-800">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 min-w-0">
                         <IconClock className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span>{moment(consultation.createdOn).fromNow()}</span>
+                        <span className="truncate">{moment(consultation.createdOn).fromNow()}</span>
                       </div>
 
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-2 group-hover:bg-cyan-50 group-hover:text-cyan-600 group-hover:border-cyan-600 dark:group-hover:bg-cyan-900/20 dark:group-hover:text-cyan-400 transition-all"
+                        className="flex-shrink-0 px-3 py-1.5 h-auto text-xs font-medium border-cyan-600 text-cyan-600 hover:bg-cyan-600 hover:text-white dark:border-cyan-500 dark:text-cyan-400 dark:hover:bg-cyan-600 dark:hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
                         onClick={() => handleShowReport(consultation)}
                       >
-                        <IconFileReport className="h-3.5 w-3.5" />
-                        View Report
+                        <IconFileReport className="h-3.5 w-3.5 mr-1" />
+                        <span className="sm:hidden">View</span>
+                        <span className="hidden sm:inline">View Report</span>
                       </Button>
                     </div>
                   </div>
@@ -284,6 +301,49 @@ const ConsultationHistory = ({ consultations = [], isLoading = false }: Consulta
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
+            >
+              Previous
+            </button>
+            
+            {/* Page Numbers - Hidden on mobile */}
+            <div className="hidden sm:flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-10 h-10 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 ${
+                    currentPage === page
+                      ? 'bg-cyan-600 text-white'
+                      : 'border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            {/* Page Indicator - Visible only on mobile */}
+            <div className="sm:hidden px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-medium">
+              Page {currentPage} of {totalPages}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Report Dialog - MODIFIED */}

@@ -60,12 +60,12 @@ export default function ReportsPage() {
       <MultiStepLoader loadingStates={loadingStates} loading={isLoading} duration={1000} loop={true} />
       
       <div className="pt-20 pb-12 flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full overflow-hidden">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Medical Reports
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               View and manage all your consultation reports
             </p>
           </div>

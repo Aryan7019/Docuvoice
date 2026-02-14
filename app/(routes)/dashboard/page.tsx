@@ -12,6 +12,7 @@ import { Consultation } from "./components/ConsultationHistory";
 import Link from "next/link";
 import moment from "moment";
 import { MultiStepLoader } from "@/components/ui/multi-step-loader";
+import { WobbleCard } from "@/components/ui/wobble-card";
 
 const loadingStates = [
   { text: "Connecting to database..." },
@@ -33,10 +34,10 @@ const WelcomeBanner = () => {
             <IconStethoscope className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold mb-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1">
               Welcome back, {user?.firstName || 'User'}!
             </h1>
-            <p className="text-cyan-100 text-base">
+            <p className="text-cyan-100 text-sm sm:text-base">
               Your AI health companion is ready to help you today
             </p>
           </div>
@@ -65,7 +66,7 @@ const RecentActivity = React.memo(({ consultations }: { consultations: Consultat
     <div className="bg-white dark:bg-neutral-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-neutral-800">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <IconClock className="h-5 w-5 text-blue-600" />
+          <IconClock className="h-5 w-5 text-cyan-600" />
           Recent Activity
         </h3>
         <Link href="/reports">
@@ -166,7 +167,7 @@ const AnalyticsCards = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Total Consultations Card */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-neutral-800 relative overflow-hidden group hover:shadow-md transition-all">
+      <WobbleCard containerClassName="col-span-1 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 min-h-[200px]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16"></div>
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
@@ -184,10 +185,10 @@ const AnalyticsCards = ({
             <Sparkline data={trendData} color="#10b981" />
           </div>
         </div>
-      </div>
+      </WobbleCard>
 
       {/* Total Time Card */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-neutral-800 relative overflow-hidden group hover:shadow-md transition-all">
+      <WobbleCard containerClassName="col-span-1 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 min-h-[200px]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full -mr-16 -mt-16"></div>
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
@@ -205,13 +206,13 @@ const AnalyticsCards = ({
             <Sparkline data={trendData.map(v => v * 5)} color="#3b82f6" />
           </div>
         </div>
-      </div>
+      </WobbleCard>
 
       {/* Plan Status Card */}
-      <div className={`rounded-xl p-6 shadow-sm border relative overflow-hidden group transition-all ${
+      <WobbleCard containerClassName={`col-span-1 border min-h-[200px] ${
         isPro 
           ? 'bg-gradient-to-br from-amber-500 to-orange-600 border-amber-400' 
-          : 'bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 hover:shadow-md'
+          : 'bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800'
       }`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div className="relative z-10">
@@ -243,7 +244,7 @@ const AnalyticsCards = ({
             </div>
           )}
         </div>
-      </div>
+      </WobbleCard>
     </div>
   );
 };
